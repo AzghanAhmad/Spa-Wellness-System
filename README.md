@@ -93,7 +93,44 @@ npm run build
 
 Production output:
 
-- `frontend/spa-wellness/dist/spa-wellness`
+- Static files: `frontend/spa-wellness/dist/spa-wellness/browser` (this is what Vercel should serve)
+
+## Deploy on Vercel
+
+The Angular app lives under `frontend/spa-wellness`. A `vercel.json` in that folder rewrites all routes to `index.html` so the Angular router works (refreshing `/dashboard`, deep links, etc.).
+
+### Option A: Vercel Dashboard (Git)
+
+1. Push this project to GitHub, GitLab, or Bitbucket.
+2. Create a project at [vercel.com](https://vercel.com) and import the repository.
+3. **Root Directory**: set to `frontend/spa-wellness` (important).
+4. **Framework Preset**: Other (or leave auto-detect if it picks Angular).
+5. **Build Command**: `npm run build`
+6. **Output Directory**: `dist/spa-wellness/browser`
+7. **Install Command**: `npm install` (default)
+8. Deploy. Every push to the default branch can trigger a new deploy if you enable it.
+
+### Option B: Vercel CLI (from your machine)
+
+```bash
+cd frontend/spa-wellness
+npm install
+npx vercel
+```
+
+Follow the prompts (link to a Vercel account). For production:
+
+```bash
+npx vercel --prod
+```
+
+Set the same **Root Directory** and **Output Directory** in the project settings on Vercel if the first deploy used the wrong folder.
+
+### Troubleshooting
+
+- **404 on refresh or direct URL** (e.g. `/dashboard`): ensure `vercel.json` is deployed and **Output Directory** is `dist/spa-wellness/browser`, not `dist/spa-wellness`.
+- **Wrong app or empty site**: confirm **Root Directory** is `frontend/spa-wellness`, not the repo root.
+- **Backend later**: add API rewrites in `vercel.json` or use a separate API host; keep SPA rewrites only for non-API paths.
 
 ## Notes
 
