@@ -1,0 +1,302 @@
+<div class="bookings-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Bookings & Scheduling</h1>
+      <p class="page-subtitle">Manage appointments and view calendar</p>
+    </div>
+    <div class="header-actions">
+      <div class="view-toggle">
+        <button class="view-btn" [class.active]="calendarView() === 'day'" (click)="calendarView.set('day')">Day</button>
+        <button class="view-btn" [class.active]="calendarView() === 'week'" (click)="calendarView.set('week')">Week</button>
+        <button class="view-btn" [class.active]="calendarView() === 'month'" (click)="calendarView.set('month')">Month</button>
+      </div>
+      <button class="btn-primary" (click)="showNewBookingModal.set(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Booking
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filters-bar card">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search bookings..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+    </div>
+    <div class="filter-group">
+      <select class="input filter-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+        <option value="all">All Statuses</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Calendar Header -->
+  <div class="calendar-nav card">
+    <button class="btn-ghost btn-sm" (click)="navigateWeek(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+      Previous
+    </button>
+    <h3 class="calendar-title">{{ formatMonth(currentDate()) }}</h3>
+    <button class="btn-ghost btn-sm" (click)="navigateWeek(1)">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <!-- Weekly Calendar -->
+  <div class="calendar-grid card">
+    <div class="calendar-header-row">
+      <div class="time-col-header"></div>
+      @for (day of weekDays(); track day.getTime()) {
+        <div class="day-col-header" [class.today]="isToday(day)">
+          <span class="day-name">{{ formatDayName(day) }}</span>
+          <span class="day-num" [class.today-num]="isToday(day)">{{ formatDayNum(day) }}</span>
+        </div>
+      }
+    </div>
+    <div class="calendar-body">
+      @for (time of timeSlots; track time) {
+        <div class="calendar-row">
+          <div class="time-label">{{ time }}</div>
+          @for (day of weekDays(); track day.getTime()) {
+            <div class="calendar-cell" [class.today-col]="isToday(day)">
+              @for (booking of getBookingsForSlot(day, time); track booking.id) {
+                <div class="booking-chip" [style.border-left-color]="getStatusColor(booking.status)"
+                     (click)="showBookingDetail.set(booking)">
+                  <span class="chip-time">{{ booking.startTime }}</span>
+                  <span class="chip-name">{{ booking.customerName }}</span>
+                  <span class="chip-service">{{ booking.services[0].serviceName }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Bookings List (below calendar) -->
+  <div class="card bookings-list-section">
+    <div class="card-header">
+      <h3>All Bookings</h3>
+      <span class="count-badge">{{ filteredBookings().length }}</span>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Service(s)</th>
+            <th>Therapist</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (booking of filteredBookings(); track booking.id) {
+            <tr>
+              <td>
+                <div class="client-cell">
+                  <div class="mini-avatar">{{ booking.customerName.split(' ').map(n => n[0]).join('') }}</div>
+                  <div>
+                    <span class="client-name">{{ booking.customerName }}</span>
+                    @if (booking.isGroupBooking) {
+                      <span class="group-badge">Group ({{ booking.groupSize }})</span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                @for (s of booking.services; track s.serviceId) {
+                  <span class="service-tag">{{ s.serviceName }}</span>
+                }
+              </td>
+              <td>{{ booking.therapistName }}</td>
+              <td>{{ booking.date }}</td>
+              <td>{{ booking.startTime }} - {{ booking.endTime }}</td>
+              <td><span [class]="getStatusClass(booking.status)">{{ booking.status }}</span></td>
+              <td class="amount">${{ booking.totalPrice }}</td>
+              <td>
+                <button class="btn-ghost btn-sm" (click)="showBookingDetail.set(booking)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- New Booking Modal -->
+  @if (showNewBookingModal()) {
+    <div class="modal-overlay" (click)="showNewBookingModal.set(false)">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Create New Booking</h3>
+          <button class="btn-ghost btn-icon" (click)="showNewBookingModal.set(false)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Client Name</label>
+            <input type="text" class="input" placeholder="Enter client name" [(ngModel)]="newBooking.customerName">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" class="input" placeholder="client&#64;email.com" [(ngModel)]="newBooking.customerEmail">
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" class="input" placeholder="+1-555-0000" [(ngModel)]="newBooking.customerPhone">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Service</label>
+            <select class="input" [(ngModel)]="newBooking.serviceIds[0]">
+              <option value="">Select a service...</option>
+              @for (service of services(); track service.id) {
+                <option [value]="service.id">{{ service.name }} ({{ service.duration }}min - ${{ service.price }})</option>
+              }
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Therapist</label>
+              <select class="input" [(ngModel)]="newBooking.therapistId">
+                <option value="">Select therapist...</option>
+                @for (therapist of therapists(); track therapist.id) {
+                  <option [value]="therapist.id">
+                    {{ therapist.name }}
+                    @if (!therapist.isAvailable) { (Unavailable) }
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Room</label>
+              <select class="input" [(ngModel)]="newBooking.roomId">
+                <option value="">Auto-assign</option>
+                @for (room of rooms(); track room.id) {
+                  <option [value]="room.id">
+                    {{ room.name }}
+                    @if (!room.isAvailable) { (Occupied) }
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" class="input" [(ngModel)]="newBooking.date">
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <select class="input" [(ngModel)]="newBooking.startTime">
+                @for (time of timeSlots; track time) {
+                  <option [value]="time">{{ time }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <!-- Conflict Warning -->
+          @if (newBooking.therapistId && hasConflict(newBooking.therapistId, newBooking.date, newBooking.startTime)) {
+            <div class="conflict-warning animate-fade-in">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>This therapist already has a booking at this time slot!</span>
+            </div>
+          }
+          <div class="form-group">
+            <label class="checkbox-inline">
+              <input type="checkbox" [(ngModel)]="newBooking.isGroupBooking">
+              <span>Group Booking</span>
+            </label>
+          </div>
+          @if (newBooking.isGroupBooking) {
+            <div class="form-group">
+              <label>Group Size</label>
+              <input type="number" class="input" min="2" max="20" [(ngModel)]="newBooking.groupSize">
+            </div>
+          }
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="input" rows="3" placeholder="Any special requests..." [(ngModel)]="newBooking.notes"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="showNewBookingModal.set(false)">Cancel</button>
+          <button class="btn-primary" (click)="createBooking()">Create Booking</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Booking Detail Drawer -->
+  @if (showBookingDetail()) {
+    <div class="drawer-overlay" (click)="showBookingDetail.set(null)"></div>
+    <div class="drawer animate-slide-in-right">
+      <div class="drawer-header">
+        <h3>Booking Details</h3>
+        <button class="btn-ghost btn-icon" (click)="showBookingDetail.set(null)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div class="detail-section">
+          <div class="detail-header">
+            <div class="detail-avatar">{{ showBookingDetail()!.customerName.split(' ').map(n => n[0]).join('') }}</div>
+            <div>
+              <h4>{{ showBookingDetail()!.customerName }}</h4>
+              <span [class]="getStatusClass(showBookingDetail()!.status)">{{ showBookingDetail()!.status }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <h5>Services</h5>
+          @for (s of showBookingDetail()!.services; track s.serviceId) {
+            <div class="detail-row">
+              <span>{{ s.serviceName }}</span>
+              <span class="amount">${{ s.price }}</span>
+            </div>
+          }
+        </div>
+        <div class="detail-section">
+          <h5>Details</h5>
+          <div class="detail-row"><span class="label">Therapist</span><span>{{ showBookingDetail()!.therapistName }}</span></div>
+          <div class="detail-row"><span class="label">Room</span><span>{{ showBookingDetail()!.roomName ?? 'Not assigned' }}</span></div>
+          <div class="detail-row"><span class="label">Date</span><span>{{ showBookingDetail()!.date }}</span></div>
+          <div class="detail-row"><span class="label">Time</span><span>{{ showBookingDetail()!.startTime }} - {{ showBookingDetail()!.endTime }}</span></div>
+          <div class="detail-row"><span class="label">Total</span><span class="amount">${{ showBookingDetail()!.totalPrice }}</span></div>
+        </div>
+        @if (showBookingDetail()!.notes) {
+          <div class="detail-section">
+            <h5>Notes</h5>
+            <p class="notes-text">{{ showBookingDetail()!.notes }}</p>
+          </div>
+        }
+        <div class="detail-actions">
+          <h5>Update Status</h5>
+          <div class="action-btns">
+            <button class="btn-sm" style="background:var(--color-success-bg);color:var(--color-success)"
+                    (click)="updateBookingStatus(showBookingDetail()!, 'confirmed')">Confirm</button>
+            <button class="btn-sm" style="background:var(--color-info-bg);color:var(--color-info)"
+                    (click)="updateBookingStatus(showBookingDetail()!, 'completed')">Complete</button>
+            <button class="btn-sm" style="background:var(--color-danger-bg);color:var(--color-danger)"
+                    (click)="updateBookingStatus(showBookingDetail()!, 'cancelled')">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

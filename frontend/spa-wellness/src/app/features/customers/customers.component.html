@@ -1,0 +1,182 @@
+<div class="customers-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Customers</h1>
+      <p class="page-subtitle">Manage your client database</p>
+    </div>
+    <button class="btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      Add Client
+    </button>
+  </div>
+
+  <div class="customers-layout">
+    <!-- Customer List -->
+    <div class="card customer-list-card">
+      <div class="list-header">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search clients..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+        </div>
+        <select class="input tag-filter" [ngModel]="tagFilter()" (ngModelChange)="tagFilter.set($event)">
+          <option value="all">All Tags</option>
+          @for (tag of allTags(); track tag) {
+            <option [value]="tag">{{ tag }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="customer-items">
+        @for (customer of filteredCustomers(); track customer.id) {
+          <div class="customer-item" [class.active]="selectedCustomer()?.id === customer.id"
+               (click)="selectCustomer(customer)">
+            <div class="customer-avatar">{{ getInitials(customer) }}</div>
+            <div class="customer-info">
+              <span class="customer-name">{{ customer.firstName }} {{ customer.lastName }}</span>
+              <span class="customer-meta">{{ customer.email }}</span>
+            </div>
+            <div class="customer-stats-mini">
+              <span class="visits-count">{{ customer.totalVisits }} visits</span>
+              @if (customer.tags?.length) {
+                <span class="customer-tag">{{ customer.tags![0] }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Customer Detail -->
+    <div class="customer-detail">
+      @if (selectedCustomer()) {
+        <div class="card detail-card animate-fade-in">
+          <!-- Profile Header -->
+          <div class="profile-header">
+            <div class="profile-avatar">{{ getInitials(selectedCustomer()!) }}</div>
+            <div class="profile-info">
+              <h2>{{ selectedCustomer()!.firstName }} {{ selectedCustomer()!.lastName }}</h2>
+              <p>{{ selectedCustomer()!.email }} · {{ selectedCustomer()!.phone }}</p>
+              <div class="profile-tags">
+                @for (tag of selectedCustomer()!.tags ?? []; track tag) {
+                  <span class="badge-primary">{{ tag }}</span>
+                }
+              </div>
+            </div>
+            <button class="btn-secondary btn-sm" (click)="openEditForm(selectedCustomer()!)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <span class="stat-value">{{ selectedCustomer()!.totalVisits }}</span>
+              <span class="stat-label">Total Visits</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-value">{{ formatCurrency(selectedCustomer()!.totalSpent) }}</span>
+              <span class="stat-label">Total Spent</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-value">{{ selectedCustomer()!.lastVisit ?? 'Never' }}</span>
+              <span class="stat-label">Last Visit</span>
+            </div>
+          </div>
+
+          <!-- Preferences -->
+          <div class="profile-section">
+            <h4>Preferences</h4>
+            <div class="pref-grid">
+              @if (selectedCustomer()!.preferences.preferredTherapist) {
+                <div class="pref-item">
+                  <span class="pref-label">Preferred Therapist</span>
+                  <span>{{ selectedCustomer()!.preferences.preferredTherapist }}</span>
+                </div>
+              }
+              <div class="pref-item">
+                <span class="pref-label">Communication</span>
+                <span>{{ selectedCustomer()!.preferences.communicationPreference }}</span>
+              </div>
+              <div class="pref-item">
+                <span class="pref-label">Marketing</span>
+                <span>{{ selectedCustomer()!.preferences.marketingOptIn ? 'Opted in' : 'Opted out' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visit History -->
+          <div class="profile-section">
+            <h4>Visit History</h4>
+            <div class="visit-list">
+              @for (visit of visitHistory(); track visit.id) {
+                <div class="visit-item">
+                  <div class="visit-date">{{ visit.date }}</div>
+                  <div class="visit-details">
+                    <span class="visit-services">{{ visit.services.join(', ') }}</span>
+                    <span class="visit-therapist">with {{ visit.therapist }}</span>
+                  </div>
+                  <div class="visit-amount">{{ formatCurrency(visit.totalPaid) }}</div>
+                  @if (visit.rating) {
+                    <div class="visit-rating">
+                      @for (star of [1,2,3,4,5]; track star) {
+                        <span class="star" [class.filled]="star <= visit.rating!">★</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="card no-selection">
+          <div class="no-selection-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color: var(--text-tertiary)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <h3>Select a Customer</h3>
+            <p>Choose a client from the list to view their profile</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Edit Drawer -->
+  @if (showEditDrawer()) {
+    <div class="drawer-overlay" (click)="showEditDrawer.set(false)"></div>
+    <div class="drawer">
+      <div class="drawer-header">
+        <h3>Edit Customer</h3>
+        <button class="btn-ghost btn-icon" (click)="showEditDrawer.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" class="input" [(ngModel)]="editForm.firstName">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" class="input" [(ngModel)]="editForm.lastName">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="input" [(ngModel)]="editForm.email">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" class="input" [(ngModel)]="editForm.phone">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea class="input" rows="4" [(ngModel)]="editForm.notes"></textarea>
+        </div>
+        <div class="drawer-actions">
+          <button class="btn-secondary" (click)="showEditDrawer.set(false)">Cancel</button>
+          <button class="btn-primary" (click)="saveCustomer()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
