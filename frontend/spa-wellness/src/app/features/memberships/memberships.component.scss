@@ -1,52 +1,42 @@
-.memberships-page { max-width: 1200px; margin: 0 auto; }
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-.page-title { font-size: 1.625rem; font-weight: 700; }
-.page-subtitle { color: var(--text-secondary); font-size: 0.875rem; margin-top: 4px; }
-.section-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 20px; color: var(--text-primary); }
+.page-wrapper { padding: 24px 28px; max-width: 1200px; }
+.page-header { margin-bottom: 24px; }
+.page-title { font-size: 1.375rem; font-weight: 700; }
+.page-subtitle { font-size: 0.8125rem; color: var(--text-secondary); margin-top: 4px; }
+.section-title { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
 
-/* Plans Grid */
-.plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .plan-card {
-  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
-  padding: 32px 28px; text-align: center; position: relative; transition: all var(--transition-normal); box-shadow: var(--shadow-sm);
-  &:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
-  &.popular { border-color: var(--color-primary); box-shadow: 0 4px 20px rgba(99,102,241,0.15); }
+  padding: 24px 20px; text-align: center; position: relative; transition: all var(--transition-normal);
+  &:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  &.popular { border-color: var(--color-primary); }
 }
-.popular-badge {
-  position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 4px 16px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); color: white;
-  border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; white-space: nowrap;
-}
-.plan-tier { display: inline-block; padding: 2px 12px; border-radius: var(--radius-full); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 12px;
-  &.tier-basic { background: rgba(14,165,233,0.1); color: #0ea5e9; }
+.pop-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 3px 14px; background: var(--color-primary); color: white; border-radius: var(--radius-full); font-size: 0.6875rem; font-weight: 600; white-space: nowrap; }
+.plan-tier { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 10px;
+  &.tier-basic { background: var(--color-info-bg); color: var(--color-info); }
   &.tier-premium { background: rgba(139,92,246,0.1); color: #8b5cf6; }
-  &.tier-vip { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  &.tier-vip { background: var(--color-warning-bg); color: var(--color-accent-dark); }
 }
-.plan-name { font-size: 1.375rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); }
-.plan-price { margin-bottom: 8px; }
-.price-amount { font-size: 2.5rem; font-weight: 800; color: var(--text-primary); }
-.price-cycle { font-size: 0.875rem; color: var(--text-tertiary); }
-.plan-discount { font-size: 0.8125rem; color: var(--color-success); font-weight: 600; margin-bottom: 24px; }
-.plan-features {
-  list-style: none; text-align: left; margin-bottom: 28px;
-  li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 0.875rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color-light); }
+.plan-name { font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; }
+.price-amount { font-size: 2.25rem; font-weight: 800; }
+.price-cycle { font-size: 0.8125rem; color: var(--text-tertiary); }
+.plan-discount { font-size: 0.75rem; color: var(--color-success); font-weight: 600; margin: 6px 0 18px; }
+.plan-features { list-style: none; text-align: left; margin-bottom: 20px;
+  li { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.8125rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color-light); }
   svg { color: var(--color-success); flex-shrink: 0; }
 }
 .plan-btn { width: 100%; }
 
-/* Members Table */
-.members-table-card { padding: 0; overflow: hidden; }
-.member-name { font-weight: 600; }
-.tier-badge {
-  display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
-  &.tier-basic { background: rgba(14,165,233,0.1); color: #0ea5e9; }
+.table-card { overflow: hidden; }
+.cell-name { font-weight: 600; }
+.tier-chip { display: inline-block; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+  &.tier-basic { background: var(--color-info-bg); color: var(--color-info); }
   &.tier-premium { background: rgba(139,92,246,0.1); color: #8b5cf6; }
-  &.tier-vip { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  &.tier-vip { background: var(--color-warning-bg); color: var(--color-accent-dark); }
 }
-.usage-bar-container { display: flex; align-items: center; gap: 8px; }
-.usage-bar { width: 80px; height: 6px; background: var(--bg-tertiary); border-radius: var(--radius-full); overflow: hidden; }
-.usage-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary)); border-radius: var(--radius-full); transition: width 0.6s ease-out; }
-.usage-text { font-size: 0.75rem; color: var(--text-tertiary); }
+.usage-row { display: flex; align-items: center; gap: 8px; }
+.usage-bar { width: 70px; height: 5px; background: var(--bg-hover); border-radius: var(--radius-full); overflow: hidden; }
+.usage-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); border-radius: var(--radius-full); transition: width 0.5s ease-out; }
+.usage-text { font-size: 0.6875rem; color: var(--text-tertiary); }
 
-@media (max-width: 1024px) { .plans-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; } }
-@media (max-width: 768px) { .page-header { flex-direction: column; align-items: flex-start; } }
+@media (max-width: 1024px) { .plans-grid { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; } }
+@media (max-width: 768px) { .page-wrapper { padding: 16px; } }

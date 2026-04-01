@@ -10,108 +10,79 @@ import { NotificationService } from '../../core/services/notification.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="page">
-      <div class="page-header">
-        <div><h1 class="page-title">Consultation & Medical Forms</h1><p class="page-subtitle">Build forms and monitor restrictions.</p></div>
+    <div class="page-wrapper">
+      <div class="page-header"><h1 class="page-title">Consultation & Medical Forms</h1></div>
+
+      <div class="card form-section">
+        <div class="section-head"><h3>Dynamic Form Builder</h3></div>
+        <div class="section-body">
+          <div class="form-grid">
+            <div class="form-group"><label>Field Label</label><input class="input" placeholder="Field label" [(ngModel)]="newField.label" /></div>
+            <div class="form-group"><label>Field Type</label><select class="input" [(ngModel)]="newField.type"><option value="text">Text</option><option value="textarea">Textarea</option><option value="select">Select</option><option value="checkbox">Checkbox</option><option value="radio">Radio</option><option value="number">Number</option></select></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;gap:8px"><label class="cb-label"><input type="checkbox" [(ngModel)]="newField.required" /> Required</label><button class="btn-secondary btn-sm" (click)="addField()">+ Add</button></div>
+          </div>
+          @if (draftFields().length) {
+            <div class="fields-preview">
+              @for (f of draftFields(); track f.id) {
+                <div class="field-chip"><span>{{ f.label }}</span><span class="badge-primary">{{ f.type }}</span></div>
+              }
+            </div>
+          }
+        </div>
       </div>
 
-      <section class="card panel">
-        <h3>Dynamic Form Builder</h3>
-        <div class="grid">
-          <input class="input" placeholder="Field label" [(ngModel)]="newField.label" />
-          <select class="input" [(ngModel)]="newField.type">
-            <option value="text">Text</option><option value="textarea">Textarea</option>
-            <option value="select">Select</option><option value="checkbox">Checkbox</option>
-            <option value="radio">Radio</option><option value="number">Number</option>
-          </select>
-          <label class="checkbox"><input type="checkbox" [(ngModel)]="newField.required" /> Required</label>
-        </div>
-        <button class="btn-secondary" (click)="addField()">Add Field</button>
-        <ul class="field-list">
-          @for (field of draftFields(); track field.id) {
-            <li>{{ field.label }} <span class="badge-primary">{{ field.type }}</span></li>
-          }
-        </ul>
-      </section>
-
-      <section class="card panel">
-        <h3>Responses & Restrictions</h3>
+      <div class="card table-section">
+        <div class="section-head"><h3>Responses & Restrictions</h3><span class="count">{{ responses().length }}</span></div>
         <div class="table-container">
           <table class="table">
             <thead><tr><th>Customer</th><th>Form</th><th>Submitted</th><th>Restrictions</th></tr></thead>
-            <tbody>
-              @for (response of responses(); track response.id) {
-                <tr>
-                  <td>{{ response.customerName }}</td>
-                  <td>{{ getFormTitle(response.formId) }}</td>
-                  <td>{{ response.submittedAt }}</td>
-                  <td>
-                    @if (response.restrictions.length === 0) {
-                      <span class="badge-success">No restrictions</span>
-                    } @else {
-                      <span class="badge-danger">{{ response.restrictions.join(', ') }}</span>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
+            <tbody>@for (r of responses(); track r.id) {
+              <tr>
+                <td class="cell-name">{{ r.customerName }}</td><td>{{ getFormTitle(r.formId) }}</td><td>{{ r.submittedAt }}</td>
+                <td>@if (r.restrictions.length === 0) { <span class="badge-success">None</span> } @else { <span class="badge-danger">{{ r.restrictions.join(', ') }}</span> }</td>
+              </tr>
+            }</tbody>
           </table>
         </div>
-      </section>
+      </div>
     </div>
   `,
   styles: [`
-    .page { display: grid; gap: 20px; }
-    .page-title { font-size: 1.5rem; font-weight: 700; }
-    .page-subtitle { color: var(--text-secondary); }
-    .panel { padding: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
-    .checkbox { display: flex; gap: 8px; align-items: center; color: var(--text-secondary); }
-    .field-list { margin-top: 12px; display: grid; gap: 8px; padding-left: 18px; }
-    .field-list li { color: var(--text-secondary); }
-    @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+    .page-wrapper { padding: 24px 28px; max-width: 1400px; }
+    .page-header { margin-bottom: 20px; }
+    .page-title { font-size: 1.375rem; font-weight: 700; }
+    .form-section, .table-section { overflow: hidden; margin-bottom: 16px; }
+    .section-head { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--border-color); h3 { font-size: 0.9375rem; font-weight: 600; } }
+    .count { font-size: 0.6875rem; padding: 2px 8px; background: var(--color-primary-50); color: var(--color-primary-dark); border-radius: var(--radius-full); font-weight: 600; }
+    .section-body { padding: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; }
+    .form-group { label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; } }
+    .cb-label { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--text-secondary); cursor: pointer; input { accent-color: var(--color-primary); } }
+    .fields-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color-light); }
+    .field-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg-hover); border-radius: var(--radius-md); font-size: 0.8125rem; }
+    .cell-name { font-weight: 600; }
+    @media (max-width: 960px) { .form-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .page-wrapper { padding: 16px; } }
   `],
 })
 export class FormsComponent implements OnInit {
   forms = signal<ConsultationForm[]>([]);
   responses = signal<FormResponse[]>([]);
   draftFields = signal<ConsultationForm['fields']>([]);
+  newField: { label: string; type: FormFieldType; required: boolean } = { label: '', type: 'text', required: false };
 
-  newField: { label: string; type: FormFieldType; required: boolean } = {
-    label: '',
-    type: 'text',
-    required: false,
-  };
-
-  constructor(
-    private readonly mockData: MockDataService,
-    private readonly notification: NotificationService,
-  ) {}
-
+  constructor(private readonly mockData: MockDataService, private readonly notification: NotificationService) {}
   ngOnInit(): void {
-    this.mockData.getConsultationForms().subscribe((forms) => this.forms.set(forms));
-    this.mockData.getFormResponses().subscribe((responses) => this.responses.set(responses));
+    this.mockData.getConsultationForms().subscribe(f => this.forms.set(f));
+    this.mockData.getFormResponses().subscribe(r => this.responses.set(r));
   }
 
   addField(): void {
-    if (!this.newField.label.trim()) {
-      this.notification.warning('Field label required', 'Please provide a label.');
-      return;
-    }
-    this.draftFields.update((list) => [
-      ...list,
-      {
-        id: 'custom-' + Date.now(),
-        label: this.newField.label,
-        type: this.newField.type,
-        required: this.newField.required,
-      },
-    ]);
+    if (!this.newField.label.trim()) { this.notification.warning('Required', 'Provide label'); return; }
+    this.draftFields.update(list => [...list, { id: 'custom-' + Date.now(), label: this.newField.label, type: this.newField.type, required: this.newField.required }]);
     this.newField.label = '';
-    this.notification.success('Field added', 'Dynamic form field added to draft.');
+    this.notification.success('Added', 'Field added to draft');
   }
 
-  getFormTitle(formId: string): string {
-    return this.forms().find((form) => form.id === formId)?.title ?? 'Unknown Form';
-  }
+  getFormTitle(formId: string): string { return this.forms().find(f => f.id === formId)?.title ?? 'Unknown'; }
 }

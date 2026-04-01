@@ -1,53 +1,47 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-auth-layout',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [CommonModule, RouterOutlet],
   template: `
-    <div class="auth-wrapper">
-      <div class="auth-left">
-        <div class="auth-brand">
+    <div class="auth-layout">
+      <div class="auth-brand-panel">
+        <div class="brand-content">
           <div class="brand-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-              <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4"/>
-              <path d="M12 8v1m0 6v1m-4-4h1m6 0h1"/>
+            <svg viewBox="0 0 40 40" fill="none" width="40" height="40">
+              <circle cx="20" cy="20" r="18" stroke="white" stroke-width="1.5" opacity="0.3"/>
+              <circle cx="20" cy="20" r="12" stroke="white" stroke-width="1.5" opacity="0.5"/>
+              <circle cx="20" cy="20" r="6" fill="white" opacity="0.9"/>
             </svg>
           </div>
-          <h1>Serenity</h1>
-          <p>Spa & Wellness Management</p>
-        </div>
-        <div class="auth-content">
-          <router-outlet />
-        </div>
-      </div>
-      <div class="auth-right">
-        <div class="auth-visual">
-          <div class="floating-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-          </div>
-          <div class="visual-content">
-            <h2>Elevate Your Wellness Business</h2>
-            <p>Streamline bookings, manage clients, and grow your spa with our intelligent management platform.</p>
-            <div class="visual-stats">
-              <div class="stat-item">
-                <span class="stat-value">10k+</span>
-                <span class="stat-label">Active Spas</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">2M+</span>
-                <span class="stat-label">Bookings</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">99%</span>
-                <span class="stat-label">Uptime</span>
-              </div>
+          <h1 class="brand-name">Serenity</h1>
+          <p class="brand-tagline">Spa & Wellness Management</p>
+          <div class="brand-features">
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Booking & Scheduling</span>
+            </div>
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Client Management</span>
+            </div>
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Business Analytics</span>
+            </div>
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Marketing Automation</span>
             </div>
           </div>
+        </div>
+      </div>
+      <div class="auth-form-panel">
+        <div class="form-wrapper">
+          <router-outlet />
         </div>
       </div>
     </div>

@@ -1,0 +1,84 @@
+﻿[33m❯[39m Building...
+[32m✔[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m
+[32mchunk-IPPGG2AJ.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m1.01 MB[39m[2m | [22m
+[32mchunk-O77T6KGK.js[39m  [2m | [22m[2m-[22m                       [2m | [22m[36m257.56 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                    [2m | [22m [36m62.37 kB[39m[2m | [22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                  [2m | [22m [36m33.33 kB[39m[2m | [22m
+[32mchunk-SKHRSWD3.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-OMS2AMPL.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m1.71 kB[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m           [2m | [22m  [1m1.37 MB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m
+[32mchunk-D3HNCE5H.js[39m  [2m | [22m[2mdashboard-component[22m     [2m | [22m[36m504.43 kB[39m[2m | [22m
+[32mchunk-MJR3U6TI.js[39m  [2m | [22m[2m-[22m                       [2m | [22m[36m151.99 kB[39m[2m | [22m
+[32mchunk-BAUXKDAO.js[39m  [2m | [22m[2mbookings-component[22m      [2m | [22m [36m72.26 kB[39m[2m | [22m
+[32mchunk-7G2FCKQB.js[39m  [2m | [22m[2mcustomers-component[22m     [2m | [22m [36m50.45 kB[39m[2m | [22m
+[32mchunk-2UNEXX3P.js[39m  [2m | [22m[2mpublic-booking-component[22m[2m | [22m [36m26.83 kB[39m[2m | [22m
+[32mchunk-PZG6AYRV.js[39m  [2m | [22m[2mvouchers-component[22m      [2m | [22m [36m25.92 kB[39m[2m | [22m
+[32mchunk-5QOHQGQB.js[39m  [2m | [22m[2m-[22m                       [2m | [22m [36m24.54 kB[39m[2m | [22m
+[32mchunk-JHORIOJY.js[39m  [2m | [22m[2mmemberships-component[22m   [2m | [22m [36m20.75 kB[39m[2m | [22m
+[32mchunk-JK4G5O64.js[39m  [2m | [22m[2mlogin-component[22m         [2m | [22m [36m20.58 kB[39m[2m | [22m
+[32mchunk-ZC7TVBV5.js[39m  [2m | [22m[2mpayments-component[22m      [2m | [22m [36m20.57 kB[39m[2m | [22m
+[32mchunk-6TJN6EK6.js[39m  [2m | [22m[2mmarketing-component[22m     [2m | [22m [36m17.81 kB[39m[2m | [22m
+[32mchunk-ILZXAR5W.js[39m  [2m | [22m[2mforms-component[22m         [2m | [22m [36m17.46 kB[39m[2m | [22m
+[32mchunk-25HGKYDU.js[39m  [2m | [22m[2msignup-component[22m        [2m | [22m [36m16.07 kB[39m[2m | [22m
+[32mchunk-MIU7LZ6O.js[39m  [2m | [22m[2mcommunications-component[22m[2m | [22m [36m14.18 kB[39m[2m | [22m
+
+Application bundle generation complete. [7.203 seconds] - 2026-03-30T19:51:40.863Z
+
+node.exe : 
+[1m[33m[33m▲ [43;33m[
+[43;30mWARNING[43;33m][0
+m [1mDeprecation[0m 
+[1m[35m[plugin 
+angular-sass][0m
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (  
+  [1m[33m[33m▲...gula   
+ r-sass][0m:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+    src/styles.scss:1:8:
+[37m      1 │ @import 
+[32m[37m"tailwindcss";
+        ╵         
+[32m^[0m
+
+
+  Sass @import rules are 
+deprecated and will be 
+removed in Dart Sass 
+3.0.0.
+  
+  More info and automated 
+migrator: [4mhttps://sass
+-lang.com/d/import[0m
+
+  The plugin 
+"angular-sass" was 
+triggered by this import
+
+    angular:styles/global:
+styles:1:8:
+[37m      1 │ @import [3
+2m'src/styles.scss'[37m;
+        ╵         
+[32m~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+Output location: E:\Projects\Project 4\project\frontend\spa-wellness\dist\spa-wellness
+

@@ -1,189 +1,238 @@
 <div class="dashboard-page">
-  <!-- Page Header -->
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Dashboard</h1>
-      <p class="page-subtitle">Welcome back! Here's what's happening today.</p>
+  <!-- Page Title -->
+  <h1 class="page-title">Business snapshot</h1>
+
+  <!-- Controls Row -->
+  <div class="controls-row">
+    <div class="controls-left">
+      <div class="view-selector">
+        <select class="view-dropdown" [ngModel]="viewMode()" (ngModelChange)="viewMode.set($event)">
+          <option>Day view</option>
+          <option>Week view</option>
+          <option>Month view</option>
+        </select>
+      </div>
+      <div class="date-nav">
+        <button class="nav-arrow">&lt;</button>
+        <button class="nav-arrow">&gt;</button>
+        <span class="current-date">{{ currentDate() }}</span>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn-primary" routerLink="/bookings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Booking
+    <div class="controls-right">
+      <button class="configure-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+          <line x1="17" y1="16" x2="23" y2="16"/>
+        </svg>
+        Configure cards
       </button>
     </div>
   </div>
 
-  <!-- KPI Cards -->
-  @if (kpis()) {
+  <!-- Main Content: KPI Cards + Detail Panel -->
+  <div class="snapshot-layout">
+    <!-- Left: KPI Cards Grid -->
     <div class="kpi-grid stagger-children">
-      <!-- Bookings Today -->
-      <div class="kpi-card">
-        <div class="kpi-icon bookings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="kpi-content">
-          <span class="kpi-label">Bookings Today</span>
-          <span class="kpi-value">{{ kpis()!.bookingsToday }}</span>
-        </div>
-      </div>
-
-      <!-- Revenue -->
-      <div class="kpi-card">
-        <div class="kpi-icon revenue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <div class="kpi-content">
-          <span class="kpi-label">Monthly Revenue</span>
-          <span class="kpi-value">{{ formatPrice(kpis()!.revenue) }}</span>
-          <span class="kpi-change positive">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            +{{ kpis()!.revenueChange }}%
-          </span>
-        </div>
-      </div>
-
-      <!-- Active Clients -->
-      <div class="kpi-card">
-        <div class="kpi-icon clients">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="kpi-content">
-          <span class="kpi-label">Active Clients</span>
-          <span class="kpi-value">{{ kpis()!.activeClients }}</span>
-          <span class="kpi-change positive">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            +{{ kpis()!.clientsChange }}%
-          </span>
-        </div>
-      </div>
-
-      <!-- Staff Availability -->
-      <div class="kpi-card">
-        <div class="kpi-icon staff">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div class="kpi-content">
-          <span class="kpi-label">Staff Available</span>
-          <span class="kpi-value">{{ kpis()!.staffAvailable }}/{{ kpis()!.staffTotal }}</span>
-          <div class="occupancy-bar">
-            <div class="occupancy-fill" [style.width.%]="kpis()!.occupancyRate"></div>
+      @for (card of kpiCards; track card.id) {
+        <div class="kpi-card" [class.selected]="activeCard() === card.id" (click)="selectCard($any(card.id))">
+          <div class="kpi-card-content">
+            <span class="kpi-label">{{ card.label }}</span>
+            <span class="kpi-value">{{ card.value }}</span>
+            @if (card.id === 'guest-feedback') {
+              <span class="star-icon">⭐</span>
+            }
           </div>
-          <span class="kpi-sublabel">{{ kpis()!.occupancyRate }}% occupancy</span>
+          <div class="kpi-card-icon" [innerHTML]="getIconSvg(card.icon)"></div>
         </div>
-      </div>
-    </div>
-  }
-
-  <!-- Charts Row -->
-  <div class="charts-row">
-    <div class="card chart-card">
-      <div class="card-header">
-        <h3>Revenue Overview</h3>
-        <div class="chart-period">
-          <button class="period-btn active">Week</button>
-          <button class="period-btn">Month</button>
-          <button class="period-btn">Year</button>
-        </div>
-      </div>
-      <div class="chart-container">
-        <canvas #revenueChart></canvas>
-      </div>
+      }
     </div>
 
-    <div class="card chart-card chart-card-sm">
-      <div class="card-header">
-        <h3>Bookings by Service</h3>
-      </div>
-      <div class="chart-container doughnut-container">
-        <canvas #serviceChart></canvas>
+    <!-- Right: Detail Panel -->
+    <div class="detail-panel card animate-fade-in">
+      <!-- Appointments Panel -->
+      @if (activeCard() === 'appointments') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Appointments <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Total appointments</span><span class="stat-num">{{ appointmentStats.total }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Projected</span><span class="stat-num">{{ appointmentStats.projected }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">{{ appointmentStats.target }} <span class="edit-icon">✏️</span></span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                          stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * appointmentStats.progress / 100)"
+                          stroke-linecap="round" transform="rotate(-90 22 22)"/>
+                </svg>
+                <span class="ring-text">{{ appointmentStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header">
+              <span>Status</span><span>Achieved</span>
+            </div>
+            @for (item of appointmentStats.statuses; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Collections Panel -->
+      @if (activeCard() === 'collections') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Collections <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Current sales</span><span class="stat-num">${{ collectionStats.currentSales | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Projected</span><span class="stat-num">${{ collectionStats.projected | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">${{ collectionStats.target | number }} ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                          stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * collectionStats.progress / 100)"
+                          stroke-linecap="round" transform="rotate(-90 22 22)"/>
+                </svg>
+                <span class="ring-text">{{ collectionStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header three-col">
+              <span>Sources</span><span>Achieved</span><span>Target</span>
+            </div>
+            @for (item of collectionStats.sources; track item.label) {
+              <div class="legend-row three-col">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">${{ item.achieved }}</span>
+                <span class="legend-value">{{ item.target ? '$' + item.target : '–' }}</span>
+              </div>
+            }
+            <div class="set-targets-link">Set individual targets</div>
+          </div>
+        </div>
+      }
+
+      <!-- Booking by Source Panel -->
+      @if (activeCard() === 'booking-source') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Booking by source <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Total guest booking</span><span class="stat-num">{{ bookingSourceStats.totalBookings }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Online bookings</span><span>Achieved</span></div>
+            @for (item of bookingSourceStats.online; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            }
+            <div class="legend-header" style="margin-top: 12px"><span>Offline bookings</span><span>Achieved</span></div>
+            @for (item of bookingSourceStats.offline; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Guest Visits Panel -->
+      @if (activeCard() === 'guest-visits') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Guest visits <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Total guests visit</span><span class="stat-num">{{ guestVisitsStats.totalVisits }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Projected</span><span class="stat-num">{{ guestVisitsStats.projected }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">{{ guestVisitsStats.target }} ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                          stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * guestVisitsStats.progress / 100)"
+                          stroke-linecap="round" transform="rotate(-90 22 22)"/>
+                </svg>
+                <span class="ring-text">{{ guestVisitsStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Guest type</span><span>Achieved</span></div>
+            @for (item of guestVisitsStats.types; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            }
+            <div class="summary-note">
+              <span class="summary-icon">💡</span>
+              <p>{{ guestVisitsStats.summary }}</p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Default panels for other KPIs -->
+      @if (activeCard() !== 'appointments' && activeCard() !== 'collections' && activeCard() !== 'booking-source' && activeCard() !== 'guest-visits') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>{{ activeCard() | titlecase }} <span class="info-icon">ℹ</span></h3>
+          </div>
+        </div>
+        <div class="panel-body default-panel">
+          <div class="default-placeholder">
+            <div class="placeholder-icon" [innerHTML]="getIconSvg(kpiCards[kpiCards.findIndex(c => c.id === activeCard())].icon)"></div>
+            <p>Detailed analytics for <strong>{{ kpiCards[kpiCards.findIndex(c => c.id === activeCard())].label }}</strong> will appear here.</p>
+            <span class="placeholder-meta">Select a different metric to view its breakdown.</span>
+          </div>
+        </div>
+      }
+
+      <!-- Footer -->
+      <div class="panel-footer">
+        <a class="footer-link">Give feedback</a>
+        <a class="footer-link primary">View details</a>
       </div>
     </div>
   </div>
 
-  <!-- Bottom Row -->
-  <div class="bottom-row">
-    <!-- Recent Bookings -->
-    <div class="card bookings-card">
-      <div class="card-header">
-        <h3>Recent Bookings</h3>
-        <a routerLink="/bookings" class="view-all-link">View all →</a>
-      </div>
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Client</th>
-              <th>Service</th>
-              <th>Therapist</th>
-              <th>Time</th>
-              <th>Status</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (booking of recentBookings(); track booking.id) {
-              <tr>
-                <td>
-                  <div class="client-cell">
-                    <div class="avatar-sm">{{ booking.customerName.split(' ').map(n => n[0]).join('') }}</div>
-                    <span>{{ booking.customerName }}</span>
-                  </div>
-                </td>
-                <td>{{ booking.services[0].serviceName }}</td>
-                <td>{{ booking.therapistName }}</td>
-                <td>{{ booking.startTime }} - {{ booking.endTime }}</td>
-                <td><span [class]="getStatusClass(booking.status)">{{ booking.status }}</span></td>
-                <td class="amount">{{ formatPrice(booking.totalPrice) }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="card actions-card">
-      <div class="card-header">
-        <h3>Quick Actions</h3>
-      </div>
-      <div class="quick-actions">
-        <a class="action-item" routerLink="/bookings">
-          <div class="action-icon booking-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <span>New Booking</span>
-        </a>
-        <a class="action-item" routerLink="/customers">
-          <div class="action-icon customer-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          </div>
-          <span>Add Client</span>
-        </a>
-        <a class="action-item" routerLink="/vouchers">
-          <div class="action-icon voucher-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/></svg>
-          </div>
-          <span>Gift Voucher</span>
-        </a>
-        <a class="action-item" routerLink="/payments">
-          <div class="action-icon payment-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          </div>
-          <span>Take Payment</span>
-        </a>
-        <a class="action-item" routerLink="/marketing">
-          <div class="action-icon marketing-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </div>
-          <span>New Campaign</span>
-        </a>
-        <a class="action-item" routerLink="/forms">
-          <div class="action-icon form-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <span>New Form</span>
-        </a>
-      </div>
-    </div>
+  <!-- Last Updated -->
+  <div class="last-updated">
+    Data last updated on 31st March, 12:00am &nbsp;
+    <a class="refresh-link">Refresh Now</a>
   </div>
 </div>
