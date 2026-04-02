@@ -25,6 +25,19 @@
   }
 }
 
+.icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0; /* prevents any extra whitespace from collapsing the SVG */
+}
+
+.icon-wrap ::ng-deep svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
 .icon-tooltip {
   display: none; position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
   background: #1a2a3a; color: white; padding: 4px 10px; border-radius: var(--radius-sm);

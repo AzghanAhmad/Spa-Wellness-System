@@ -73,6 +73,9 @@ import { NotificationService } from '../../../core/services/notification.service
         <div class="demo-item" (click)="fillDemo('staff@serenity.com')">
           <strong>Staff:</strong> staff&#64;serenity.com
         </div>
+        <div class="demo-item" (click)="fillDemo('customer@serenity.com')">
+          <strong>Customer:</strong> customer&#64;serenity.com
+        </div>
         <span class="demo-note">Password: any</span>
       </div>
     </div>
@@ -97,7 +100,13 @@ export class LoginComponent {
     try {
       await this.authService.login({ email: this.email, password: this.password });
       this.notification.success('Welcome back!', `Signed in as ${this.authService.user()?.firstName}`);
-      this.router.navigate(['/dashboard']);
+      if (this.authService.user()?.role === 'admin') {
+        this.router.navigate(['/dashboard']);
+      } else if (this.authService.user()?.role === 'customer') {
+        this.router.navigate(['/customer/dashboard']);
+      } else {
+        this.router.navigate(['/bookings']);
+      }
     } catch (err: any) {
       this.errorMessage.set(err.message || 'Login failed');
     }

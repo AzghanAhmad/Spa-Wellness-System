@@ -206,8 +206,275 @@
         </div>
       }
 
+      <!-- Provider Utilization Panel -->
+      @if (activeCard() === 'provider-util') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Provider utilization <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Utilization</span><span class="stat-num">{{ providerUtilStats.utilization }}%</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">{{ providerUtilStats.target }}% ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle
+                    cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                    stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * providerUtilStats.progress / 100)"
+                    stroke-linecap="round" transform="rotate(-90 22 22)"
+                  />
+                </svg>
+                <span class="ring-text">{{ providerUtilStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Provider</span><span>Utilization</span></div>
+            @for (item of providerUtilStats.providers; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}%</span>
+              </div>
+            }
+            <div class="summary-note">
+              <span class="summary-icon">💡</span>
+              <p>{{ providerUtilStats.summary }}</p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Products Panel -->
+      @if (activeCard() === 'products') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Products ($) <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Current sales</span><span class="stat-num">${{ productsStats.currentSales | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Projected</span><span class="stat-num">${{ productsStats.projected | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">${{ productsStats.target | number }} ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle
+                    cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                    stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * productsStats.progress / 100)"
+                    stroke-linecap="round" transform="rotate(-90 22 22)"
+                  />
+                </svg>
+                <span class="ring-text">{{ productsStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header three-col"><span>Category</span><span>Achieved</span><span>Target</span></div>
+            @for (item of productsStats.categories; track item.label) {
+              <div class="legend-row three-col">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">${{ item.achieved | number }}</span>
+                <span class="legend-value">${{ item.target | number }}</span>
+              </div>
+            }
+            <div class="set-targets-link">Boost top category</div>
+          </div>
+        </div>
+      }
+
+      <!-- Wait Time Panel -->
+      @if (activeCard() === 'wait-time') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Wait time <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Average wait</span><span class="stat-num">{{ waitTimeStats.avgWaitMins }} mins</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">{{ waitTimeStats.targetMins }} mins ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle
+                    cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                    stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * waitTimeStats.progress / 100)"
+                    stroke-linecap="round" transform="rotate(-90 22 22)"
+                  />
+                </svg>
+                <span class="ring-text">{{ waitTimeStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Time bucket</span><span>Bookings</span></div>
+            @for (item of waitTimeStats.distribution; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            }
+            <div class="summary-note">
+              <span class="summary-icon">💡</span>
+              <p>{{ waitTimeStats.note }}</p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Service Add-Ons Panel -->
+      @if (activeCard() === 'service-addons') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Service Add-Ons ($) <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Current revenue</span><span class="stat-num">${{ serviceAddonsStats.currentRevenue | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Projected</span><span class="stat-num">${{ serviceAddonsStats.projected | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">${{ serviceAddonsStats.target | number }} ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle
+                    cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                    stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * serviceAddonsStats.progress / 100)"
+                    stroke-linecap="round" transform="rotate(-90 22 22)"
+                  />
+                </svg>
+                <span class="ring-text">{{ serviceAddonsStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Add-on</span><span>Achieved</span></div>
+            @for (item of serviceAddonsStats.addons; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">${{ item.achieved | number }}</span>
+              </div>
+            }
+            <div class="set-targets-link">Recommend add-ons to staff</div>
+          </div>
+        </div>
+      }
+
+      <!-- Revenue Panel -->
+      @if (activeCard() === 'revenue') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Revenue ($) <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Current revenue</span><span class="stat-num">${{ revenueStats.currentRevenue | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Projected</span><span class="stat-num">${{ revenueStats.projected | number }}</span></div>
+              <div class="stat-item"><span class="stat-meta">Target</span><span class="stat-num">${{ revenueStats.target | number }} ✏️</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle
+                    cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                    stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * revenueStats.progress / 100)"
+                    stroke-linecap="round" transform="rotate(-90 22 22)"
+                  />
+                </svg>
+                <span class="ring-text">{{ revenueStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Revenue source</span><span>Achieved</span></div>
+            @for (item of revenueStats.breakdown; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">${{ item.achieved | number }}</span>
+              </div>
+            }
+            <div class="summary-note">
+              <span class="summary-icon">💡</span>
+              <p>Line chart shows weekly trend; breakdown helps identify where revenue comes from.</p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Guest Feedback Panel -->
+      @if (activeCard() === 'guest-feedback') {
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h3>Guest feedback <span class="info-icon">ℹ</span></h3>
+            <div class="panel-stats">
+              <div class="stat-item"><span class="stat-meta">Average rating</span><span class="stat-num">{{ guestFeedbackStats.averageRating }} / 5</span></div>
+              <div class="stat-item"><span class="stat-meta">Total reviews</span><span class="stat-num">{{ guestFeedbackStats.totalReviews }}</span></div>
+              <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#eef3f7" stroke-width="4"/>
+                  <circle
+                    cx="22" cy="22" r="18" fill="none" stroke="#f5a623" stroke-width="4"
+                    stroke-dasharray="113" [attr.stroke-dashoffset]="113 - (113 * guestFeedbackStats.progress / 100)"
+                    stroke-linecap="round" transform="rotate(-90 22 22)"
+                  />
+                </svg>
+                <span class="ring-text">{{ guestFeedbackStats.progress }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body chart-layout">
+          <div class="chart-area">
+            <canvas #chartCanvas></canvas>
+          </div>
+          <div class="legend-table">
+            <div class="legend-header"><span>Rating</span><span>Reviews</span></div>
+            @for (item of guestFeedbackStats.breakdown; track item.label) {
+              <div class="legend-row">
+                <div class="legend-label"><span class="legend-dot" [style.background]="item.color"></span>{{ item.label }}</div>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            }
+            <div class="summary-note">
+              <span class="summary-icon">💡</span>
+              <p>{{ guestFeedbackStats.summary }}</p>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Default panels for other KPIs -->
-      @if (activeCard() !== 'appointments' && activeCard() !== 'collections' && activeCard() !== 'booking-source' && activeCard() !== 'guest-visits') {
+      @if (
+        activeCard() !== 'appointments' &&
+        activeCard() !== 'collections' &&
+        activeCard() !== 'booking-source' &&
+        activeCard() !== 'guest-visits' &&
+        activeCard() !== 'provider-util' &&
+        activeCard() !== 'products' &&
+        activeCard() !== 'wait-time' &&
+        activeCard() !== 'service-addons' &&
+        activeCard() !== 'revenue' &&
+        activeCard() !== 'guest-feedback'
+      ) {
         <div class="panel-header">
           <div class="panel-title-row">
             <h3>{{ activeCard() | titlecase }} <span class="info-icon">ℹ</span></h3>

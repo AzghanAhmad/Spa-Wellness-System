@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, publicGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, customerGuard, publicGuard } from './core/guards/auth.guard';
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component';
+import { UserLayoutComponent } from './layouts/user-layout/user-layout.component';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component';
+import { CustomerLayoutComponent } from './layouts/customer-layout/customer-layout.component';
 
 export const routes: Routes = [
   {
@@ -32,7 +34,7 @@ export const routes: Routes = [
   {
     path: '',
     component: DashboardLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [adminGuard],
     children: [
       {
         path: 'dashboard',
@@ -85,5 +87,52 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
-  { path: '**', redirectTo: '/dashboard' },
+  {
+    path: '',
+    component: UserLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'bookings',
+        loadComponent: () =>
+          import('./features/bookings/bookings.component').then((m) => m.BookingsComponent),
+      },
+      {
+        path: 'customers',
+        loadComponent: () =>
+          import('./features/customers/customers.component').then((m) => m.CustomersComponent),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'bookings' },
+    ],
+  },
+  {
+    path: 'customer',
+    component: CustomerLayoutComponent,
+    canActivate: [customerGuard],
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/customer-dashboard/customer-dashboard.component').then(
+            (m) => m.CustomerDashboardComponent,
+          ),
+      },
+      {
+        path: 'timeline',
+        loadComponent: () =>
+          import('./features/customer-timeline/customer-timeline.component').then(
+            (m) => m.CustomerTimelineComponent,
+          ),
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/customer-profile/customer-profile.component').then(
+            (m) => m.CustomerProfileComponent,
+          ),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+    ],
+  },
+  { path: '**', redirectTo: '/bookings' },
 ];

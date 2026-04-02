@@ -22,7 +22,19 @@ export const adminGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/dashboard']);
+  router.navigate(['/bookings']);
+  return false;
+};
+
+export const customerGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated() && authService.isCustomer()) {
+    return true;
+  }
+
+  router.navigate([authService.isAdmin() ? '/dashboard' : '/bookings']);
   return false;
 };
 
@@ -34,6 +46,12 @@ export const publicGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/dashboard']);
+  if (authService.isAdmin()) {
+    router.navigate(['/dashboard']);
+  } else if (authService.isCustomer()) {
+    router.navigate(['/customer/dashboard']);
+  } else {
+    router.navigate(['/bookings']);
+  }
   return false;
 };

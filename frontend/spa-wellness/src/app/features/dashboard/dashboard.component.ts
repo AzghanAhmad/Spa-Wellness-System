@@ -95,6 +95,93 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     summary: 'Out of 40 serviced guests, 2 rebooked, with an average spend of $66.8 with a target of $80'
   };
 
+  // Provider utilization panel data
+  providerUtilStats = {
+    utilization: 68,
+    target: 75,
+    progress: 68,
+    providers: [
+      { label: 'Emma Wilson', value: 84, color: '#6366f1' },
+      { label: 'Olivia Martinez', value: 72, color: '#0ea5e9' },
+      { label: 'Sophia Kim', value: 61, color: '#10b981' },
+      { label: 'Isabella Davis', value: 78, color: '#f59e0b' },
+      { label: 'Mia Johnson', value: 66, color: '#8b5cf6' },
+    ],
+    summary: '4 out of 5 providers are within the optimal utilization range.',
+  };
+
+  // Products panel data
+  productsStats = {
+    currentSales: 599,
+    projected: 1800,
+    target: 1500,
+    progress: 76,
+    categories: [
+      { label: 'Skincare', achieved: 260, target: 420, color: '#8e44ad' },
+      { label: 'Hair care', achieved: 145, target: 320, color: '#e67e22' },
+      { label: 'Body care', achieved: 120, target: 280, color: '#1a4b6e' },
+      { label: 'Wellness supplements', achieved: 74, target: 200, color: '#6c3483' },
+    ],
+  };
+
+  // Wait time panel data
+  waitTimeStats = {
+    avgWaitMins: 12,
+    targetMins: 10,
+    progress: 72,
+    distribution: [
+      { label: '0-5 mins', value: 18, color: '#10b981' },
+      { label: '6-10 mins', value: 37, color: '#0ea5e9' },
+      { label: '11-15 mins', value: 22, color: '#6366f1' },
+      { label: '16+ mins', value: 13, color: '#ef4444' },
+    ],
+    note: 'Lower wait times correlate with higher guest satisfaction.',
+  };
+
+  // Service add-ons panel data
+  serviceAddonsStats = {
+    currentRevenue: 120,
+    projected: 420,
+    target: 360,
+    progress: 76,
+    addons: [
+      { label: 'Hot Stone Set', achieved: 34, color: '#f59e0b' },
+      { label: 'Aromatherapy Kit', achieved: 29, color: '#0ea5e9' },
+      { label: 'LED Light Therapy', achieved: 22, color: '#10b981' },
+      { label: 'Body Wrap Kit', achieved: 19, color: '#8b5cf6' },
+    ],
+  };
+
+  // Revenue panel data
+  revenueStats = {
+    currentRevenue: 855,
+    projected: 1900,
+    target: 1650,
+    progress: 76,
+    breakdown: [
+      { label: 'Bookings', achieved: 510, color: '#6366f1' },
+      { label: 'Memberships', achieved: 210, color: '#0ea5e9' },
+      { label: 'Vouchers', achieved: 90, color: '#10b981' },
+      { label: 'Products', achieved: 45, color: '#f59e0b' },
+    ],
+    lineLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    lineData: [640, 720, 680, 770, 860, 930, 310],
+  };
+
+  // Guest feedback panel data
+  guestFeedbackStats = {
+    averageRating: 4.2,
+    totalReviews: 42,
+    progress: 84,
+    breakdown: [
+      { label: '5 stars', value: 26, color: '#10b981' },
+      { label: '4 stars', value: 12, color: '#0ea5e9' },
+      { label: '3 stars', value: 3, color: '#f59e0b' },
+      { label: '2 stars', value: 1, color: '#ef4444' },
+    ],
+    summary: 'Guests love consistency and therapist expertise. Most feedback requests focus on faster check-ins.',
+  };
+
   constructor(private readonly mockData: MockDataService) {}
 
   ngOnInit(): void {}
@@ -168,6 +255,166 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           responsive: true, maintainAspectRatio: false, cutout: '55%',
           plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2a3a', cornerRadius: 8, padding: 10, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } } }
         }
+      });
+    } else if (active === 'provider-util') {
+      const labels = this.providerUtilStats.providers.map((p) => p.label);
+      const data = this.providerUtilStats.providers.map((p) => p.value);
+      const colors = this.providerUtilStats.providers.map((p) => p.color);
+
+      this.chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              data,
+              backgroundColor: colors,
+              borderRadius: 6,
+              barThickness: 30,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a2a3a',
+              cornerRadius: 8,
+              padding: 10,
+              titleFont: { family: 'Inter' },
+              bodyFont: { family: 'Inter' },
+            },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#5a6d7e', font: { size: 11, family: 'Inter' } } },
+            y: { grid: { color: '#eef3f7' }, ticks: { color: '#8e9fad', font: { size: 11, family: 'Inter' } } },
+          },
+        },
+      });
+    } else if (active === 'products' || active === 'service-addons' || active === 'guest-feedback' || active === 'revenue') {
+      // Use doughnut for most breakdown KPIs to keep the UI consistent.
+      let labels: string[] = [];
+      let data: number[] = [];
+      let colors: string[] = [];
+
+      if (active === 'products') {
+        labels = this.productsStats.categories.map((c) => c.label);
+        data = this.productsStats.categories.map((c) => c.achieved);
+        colors = this.productsStats.categories.map((c) => c.color);
+      } else if (active === 'service-addons') {
+        labels = this.serviceAddonsStats.addons.map((a) => a.label);
+        data = this.serviceAddonsStats.addons.map((a) => a.achieved);
+        colors = this.serviceAddonsStats.addons.map((a) => a.color);
+      } else if (active === 'guest-feedback') {
+        labels = this.guestFeedbackStats.breakdown.map((b) => b.label);
+        data = this.guestFeedbackStats.breakdown.map((b) => b.value);
+        colors = this.guestFeedbackStats.breakdown.map((b) => b.color);
+      } else {
+        labels = this.revenueStats.breakdown.map((b) => b.label);
+        data = this.revenueStats.breakdown.map((b) => b.achieved);
+        colors = this.revenueStats.breakdown.map((b) => b.color);
+      }
+
+      // Revenue gets an extra line chart feel: switch to line if it's revenue.
+      if (active === 'revenue') {
+        this.chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: this.revenueStats.lineLabels,
+            datasets: [
+              {
+                label: 'Revenue',
+                data: this.revenueStats.lineData,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1a2a3a',
+                cornerRadius: 8,
+                padding: 10,
+                titleFont: { family: 'Inter' },
+                bodyFont: { family: 'Inter' },
+              },
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: '#5a6d7e', font: { size: 11, family: 'Inter' } } },
+              y: {
+                grid: { color: '#eef3f7' },
+                ticks: { color: '#8e9fad', font: { size: 11, family: 'Inter' } },
+                title: { display: false },
+              },
+            },
+          },
+        });
+      } else {
+        this.chartInstance = new Chart(ctx, {
+          type: 'doughnut',
+          data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1a2a3a',
+                cornerRadius: 8,
+                padding: 10,
+                titleFont: { family: 'Inter' },
+                bodyFont: { family: 'Inter' },
+              },
+            },
+          },
+        });
+      }
+    } else if (active === 'wait-time') {
+      const labels = this.waitTimeStats.distribution.map((d) => d.label);
+      const data = this.waitTimeStats.distribution.map((d) => d.value);
+      const colors = this.waitTimeStats.distribution.map((d) => d.color);
+
+      this.chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              data,
+              backgroundColor: colors,
+              borderRadius: 6,
+              barThickness: 28,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a2a3a',
+              cornerRadius: 8,
+              padding: 10,
+              titleFont: { family: 'Inter' },
+              bodyFont: { family: 'Inter' },
+            },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#5a6d7e', font: { size: 11, family: 'Inter' } } },
+            y: { grid: { color: '#eef3f7' }, ticks: { color: '#8e9fad', font: { size: 11, family: 'Inter' } } },
+          },
+        },
       });
     }
   }

@@ -1,6 +1,7 @@
 import { Component, signal, computed } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 
@@ -35,7 +36,7 @@ interface NavItem {
             <a class="sidebar-icon-btn" [routerLink]="item.route" routerLinkActive="active"
                [routerLinkActiveOptions]="{exact: item.route === '/dashboard'}"
                [title]="item.label" (click)="mobileMenuOpen.set(false)">
-              <span class="icon-wrap" [innerHTML]="item.icon"></span>
+              <span class="icon-wrap" [innerHTML]="safeHtml(item.icon)"></span>
               <span class="icon-tooltip">{{ item.label }}</span>
             </a>
           }
@@ -135,6 +136,12 @@ export class DashboardLayoutComponent {
   constructor(
     public readonly authService: AuthService,
     public readonly themeService: ThemeService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly sanitizer: DomSanitizer,
   ) {}
+
+  safeHtml(html: string): SafeHtml {
+    // Icons are passed as inline SVG strings; bypass Angular sanitizer so SVG tags render.
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
 }

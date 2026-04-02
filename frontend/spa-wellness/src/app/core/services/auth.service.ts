@@ -76,6 +76,15 @@ export class AuthService {
         phone: '+1-555-0101',
         createdAt: '2024-03-10',
       },
+      'customer@serenity.com': {
+        id: 'u3',
+        email: 'customer@serenity.com',
+        firstName: 'Anna',
+        lastName: 'Duke',
+        role: 'customer',
+        phone: '+1-555-0102',
+        createdAt: '2024-04-15',
+      },
     };
 
     const user = mockUsers[request.email];
@@ -134,5 +143,9 @@ export class AuthService {
 
   isAdmin(): boolean {
     return this.hasRole('admin');
+  }
+
+  isCustomer(): boolean {
+    return this.hasRole('customer');
   }
 }
