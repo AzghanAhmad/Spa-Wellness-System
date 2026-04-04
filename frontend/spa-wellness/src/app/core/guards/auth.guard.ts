@@ -1,6 +1,31 @@
 import { inject } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
+import { Router, CanActivateFn, CanMatchFn, UrlSegment } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+
+/** Root URL or staff-only top-level paths — must be listed before admin layout in routes. */
+export const matchStaffLayout: CanMatchFn = (_route, segments: UrlSegment[]) => {
+  if (segments.length === 0) return true;
+  const p = segments[0].path;
+  return p === 'bookings' || p === 'customers';
+};
+
+/** Admin shell routes (same URLs as before; disambiguated from staff via canMatch, not route order alone). */
+const ADMIN_ROOT_SEGMENTS = new Set([
+  'dashboard',
+  'bookings',
+  'customers',
+  'memberships',
+  'vouchers',
+  'payments',
+  'marketing',
+  'forms',
+  'communications',
+]);
+
+export const matchAdminLayout: CanMatchFn = (_route, segments: UrlSegment[]) => {
+  if (segments.length === 0) return false;
+  return ADMIN_ROOT_SEGMENTS.has(segments[0].path);
+};
 
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);

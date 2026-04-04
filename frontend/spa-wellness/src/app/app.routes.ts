@@ -1,5 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, customerGuard, publicGuard } from './core/guards/auth.guard';
+import {
+  authGuard,
+  adminGuard,
+  customerGuard,
+  publicGuard,
+  matchStaffLayout,
+  matchAdminLayout,
+} from './core/guards/auth.guard';
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component';
 import { UserLayoutComponent } from './layouts/user-layout/user-layout.component';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component';
@@ -31,11 +38,11 @@ export const routes: Routes = [
         (m) => m.PublicBookingComponent,
       ),
   },
-  // Staff / shared auth area must be registered BEFORE the admin layout: both use path ''.
-  // Otherwise /bookings was matched by DashboardLayout + adminGuard and caused an infinite redirect loop.
+  // Staff vs admin both use path ''; canMatch picks the shell so production routing cannot fall through incorrectly.
   {
     path: '',
     component: UserLayoutComponent,
+    canMatch: [matchStaffLayout],
     canActivate: [authGuard],
     children: [
       {
@@ -54,6 +61,7 @@ export const routes: Routes = [
   {
     path: '',
     component: DashboardLayoutComponent,
+    canMatch: [matchAdminLayout],
     canActivate: [adminGuard],
     children: [
       {
