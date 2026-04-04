@@ -2,9 +2,8 @@
 
 /* ============================================
    SERENITY SPA - Beforce/Zenoti Style System
+   Inter is loaded from index.html so `ng build` does not require network (font inlining).
    ============================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   /* Primary Palette - Teal/Blue like Beforce */

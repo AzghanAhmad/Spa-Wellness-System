@@ -22,6 +22,12 @@ export const adminGuard: CanActivateFn = () => {
     return true;
   }
 
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/auth/login']);
+    return false;
+  }
+
+  // Logged in but not admin — staff/customer area (must not redirect to /bookings under admin layout)
   router.navigate(['/bookings']);
   return false;
 };
@@ -32,6 +38,11 @@ export const customerGuard: CanActivateFn = () => {
 
   if (authService.isAuthenticated() && authService.isCustomer()) {
     return true;
+  }
+
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/auth/login']);
+    return false;
   }
 
   router.navigate([authService.isAdmin() ? '/dashboard' : '/bookings']);

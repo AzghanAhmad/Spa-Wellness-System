@@ -31,6 +31,26 @@ export const routes: Routes = [
         (m) => m.PublicBookingComponent,
       ),
   },
+  // Staff / shared auth area must be registered BEFORE the admin layout: both use path ''.
+  // Otherwise /bookings was matched by DashboardLayout + adminGuard and caused an infinite redirect loop.
+  {
+    path: '',
+    component: UserLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'bookings',
+        loadComponent: () =>
+          import('./features/bookings/bookings.component').then((m) => m.BookingsComponent),
+      },
+      {
+        path: 'customers',
+        loadComponent: () =>
+          import('./features/customers/customers.component').then((m) => m.CustomersComponent),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'bookings' },
+    ],
+  },
   {
     path: '',
     component: DashboardLayoutComponent,
@@ -85,24 +105,6 @@ export const routes: Routes = [
           ),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-    ],
-  },
-  {
-    path: '',
-    component: UserLayoutComponent,
-    canActivate: [authGuard],
-    children: [
-      {
-        path: 'bookings',
-        loadComponent: () =>
-          import('./features/bookings/bookings.component').then((m) => m.BookingsComponent),
-      },
-      {
-        path: 'customers',
-        loadComponent: () =>
-          import('./features/customers/customers.component').then((m) => m.CustomersComponent),
-      },
-      { path: '', pathMatch: 'full', redirectTo: 'bookings' },
     ],
   },
   {
