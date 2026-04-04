@@ -23,6 +23,7 @@ The app is built to be ready for future integration with a .NET backend.
 - TailwindCSS + custom SCSS design system
 - Chart.js (dashboard analytics)
 
+
 ## Project Structure
 
 ```text
