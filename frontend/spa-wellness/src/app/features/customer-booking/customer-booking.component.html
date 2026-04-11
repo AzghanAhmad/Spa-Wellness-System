@@ -1,0 +1,206 @@
+<div class="customer-booking">
+  @if (confirmation()) {
+    <div class="cb-success card">
+      <div class="cb-success-icon" aria-hidden="true">✓</div>
+      <h2>Booking confirmed</h2>
+      <p class="cb-ref">Reference: <strong>{{ confirmation() }}</strong></p>
+      <p class="cb-hint">We will send a reminder to {{ customerEmail() }}.</p>
+      <button type="button" class="btn-primary" (click)="resetBooking()">Book another visit</button>
+    </div>
+  } @else {
+    <header class="cb-head">
+      <h1>Book a visit</h1>
+      <ol class="cb-stepper" aria-label="Booking steps">
+        @for (step of [1, 2, 3, 4]; track step) {
+          <li>
+            <button
+              type="button"
+              class="cb-step-dot"
+              [class.cb-step-active]="currentStep() === step"
+              [class.cb-step-done]="currentStep() > step"
+              (click)="goToStep(step)"
+            >
+              {{ step }}
+            </button>
+          </li>
+        }
+      </ol>
+    </header>
+
+    @if (currentStep() === 1) {
+      <section class="cb-panel card" aria-labelledby="cb-s1">
+        <h2 id="cb-s1" class="cb-section-title">Choose a service</h2>
+        <div class="cb-cats" role="tablist">
+          @for (c of categories; track c) {
+            <button
+              type="button"
+              role="tab"
+              class="cat-chip"
+              [class.active]="selectedCategory() === c"
+              (click)="selectedCategory.set(c)"
+            >
+              {{ formatCategory(c) }}
+            </button>
+          }
+        </div>
+        <div class="cb-service-grid">
+          @for (svc of filteredServices(); track svc.id) {
+            <button type="button" class="svc-tile" (click)="selectService(svc.id)">
+              <span class="svc-emoji" aria-hidden="true">{{ getServiceIcon(svc.category) }}</span>
+              <span class="svc-name">{{ svc.name }}</span>
+              <span class="svc-meta">{{ svc.duration }} min · {{ '$' + svc.price }}</span>
+            </button>
+          }
+        </div>
+        @if (filteredServices().length === 0) {
+          <p class="cb-empty">No services in this category.</p>
+        }
+      </section>
+    }
+
+    @if (currentStep() === 2) {
+      <section class="cb-panel card" aria-labelledby="cb-s2">
+        <div class="cb-bar">
+          <button type="button" class="btn-ghost btn-sm" (click)="prevStep()">← Back</button>
+        </div>
+        <h2 id="cb-s2" class="cb-section-title">Choose a therapist</h2>
+        <div class="cb-therapist-grid">
+          @for (t of availableTherapists(); track t.id) {
+            <button type="button" class="therapist-tile" (click)="selectTherapist(t.id)">
+              <span class="therapist-name">{{ t.name }}</span>
+              <span class="therapist-meta">
+                @if (t.isAvailable) {
+                  Available
+                } @else {
+                  Limited
+                }
+                · ★ {{ t.rating }}
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    @if (currentStep() === 3) {
+      <section class="cb-panel card" aria-labelledby="cb-s3">
+        <div class="cb-bar">
+          <button type="button" class="btn-ghost btn-sm" (click)="prevStep()">← Back</button>
+        </div>
+        <h2 id="cb-s3" class="cb-section-title">Pick date & time</h2>
+        <div class="form-group">
+          <label for="cb-date">Date</label>
+          <input
+            id="cb-date"
+            type="date"
+            class="input"
+            name="cbDate"
+            [min]="getMinDate()"
+            [ngModel]="selectedDate()"
+            (ngModelChange)="selectedDate.set($event)"
+          />
+        </div>
+        <p class="cb-slot-label">Available slots</p>
+        <div class="cb-slot-grid">
+          @for (slot of timeSlots; track slot) {
+            <button
+              type="button"
+              class="slot-btn"
+              [class.slot-taken]="isSlotTaken(slot)"
+              [disabled]="isSlotTaken(slot)"
+              (click)="selectTime(slot)"
+            >
+              {{ slot }}
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    @if (currentStep() === 4) {
+      <section class="cb-panel card" aria-labelledby="cb-s4">
+        <div class="cb-bar">
+          <button type="button" class="btn-ghost btn-sm" (click)="prevStep()">← Back</button>
+        </div>
+        <h2 id="cb-s4" class="cb-section-title">Your details</h2>
+        @if (selectedService(); as svc) {
+          <p class="cb-summary">
+            {{ svc.name }} · {{ selectedDate() }} {{ selectedTime() }} · with
+            {{ selectedTherapist()?.name }}
+          </p>
+        }
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="cb-name">Full name</label>
+            <input
+              id="cb-name"
+              class="input"
+              name="cbName"
+              [ngModel]="customerName()"
+              (ngModelChange)="customerName.set($event)"
+            />
+          </div>
+          <div class="form-group">
+            <label for="cb-email">Email</label>
+            <input
+              id="cb-email"
+              type="email"
+              class="input"
+              name="cbEmail"
+              [ngModel]="customerEmail()"
+              (ngModelChange)="customerEmail.set($event)"
+            />
+          </div>
+          <div class="form-group">
+            <label for="cb-phone">Phone</label>
+            <input
+              id="cb-phone"
+              class="input"
+              name="cbPhone"
+              [ngModel]="customerPhone()"
+              (ngModelChange)="customerPhone.set($event)"
+            />
+          </div>
+        </div>
+        <label class="cb-check">
+          <input
+            type="checkbox"
+            name="cbGroup"
+            [ngModel]="isGroupBooking()"
+            (ngModelChange)="isGroupBooking.set($event)"
+          />
+          Group booking
+        </label>
+        @if (isGroupBooking()) {
+          <div class="form-group cb-group-size">
+            <label for="cb-gs">Group size</label>
+            <input
+              id="cb-gs"
+              type="number"
+              class="input"
+              min="2"
+              max="10"
+              name="cbGs"
+              [ngModel]="groupSize()"
+              (ngModelChange)="groupSize.set(+$event)"
+            />
+          </div>
+        }
+        <div class="form-group">
+          <label for="cb-notes">Notes (optional)</label>
+          <textarea
+            id="cb-notes"
+            class="input"
+            rows="3"
+            name="cbNotes"
+            [ngModel]="notes()"
+            (ngModelChange)="notes.set($event)"
+          ></textarea>
+        </div>
+        <button type="button" class="btn-primary btn-lg cb-confirm" (click)="confirmBooking()">
+          Confirm booking
+        </button>
+      </section>
+    }
+  }
+</div>

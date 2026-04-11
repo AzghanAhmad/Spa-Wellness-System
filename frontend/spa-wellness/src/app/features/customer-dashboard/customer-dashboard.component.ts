@@ -1,99 +1,74 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { MockDataService } from '../../core/services/mock-data.service';
+import { Booking, SpaService, MembershipPlan, GiftVoucher } from '../../core/models';
 
 @Component({
   selector: 'app-customer-dashboard',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="dash-grid">
-      <section class="card panel left animate-slide-in-left">
-        <div class="search"><input class="input" placeholder="Search by name or phone number" /></div>
-        <h4>Recent</h4>
-        @for (item of recent(); track item.name) {
-          <div class="recent-item">
-            <div class="avatar">{{ item.initials }}</div>
-            <div class="info"><strong>{{ item.name }}</strong><span>{{ item.note }}</span></div>
-            <span class="time">{{ item.time }}</span>
-          </div>
-        }
-      </section>
-
-      <section class="card panel center animate-fade-in-up">
-        <div class="filter-row">
-          <button class="chip active">Everything</button>
-          <button class="chip">Appointments</button>
-          <button class="chip">Feedback</button>
-        </div>
-        @for (entry of timeline(); track entry.id) {
-          <article class="entry">
-            <div class="entry-head">
-              <strong>{{ entry.type }}</strong>
-              <span>{{ entry.time }}</span>
-            </div>
-            <p>{{ entry.message }}</p>
-            <div class="meta">Center: {{ entry.center }} | Amount: {{ '$' + entry.amount }}</div>
-          </article>
-        }
-      </section>
-
-      <section class="card panel right animate-slide-in-right">
-        <h4>Today's appointments (3)</h4>
-        <div class="kpis">
-          <div><strong>1</strong><span>Yet to come</span></div>
-          <div><strong>1</strong><span>In service</span></div>
-          <div><strong>1</strong><span>Completed</span></div>
-        </div>
-        <div class="appt-list">
-          <div class="appt"><strong>Hair cut</strong><span>10:45 - 11:30</span></div>
-          <div class="appt"><strong>Manicure</strong><span>11:00 - 12:00</span></div>
-          <div class="appt"><strong>Blowout</strong><span>12:15 - 12:45</span></div>
-        </div>
-      </section>
-    </div>
-  `,
-  styles: [`
-    .dash-grid { display: grid; gap: 12px; grid-template-columns: 280px 1fr 290px; }
-    .panel { padding: 14px; border: 1px solid #d8e8f7; border-radius: 14px; background: #fff; }
-    .left h4, .right h4 { margin: 8px 0 10px; color: #20435f; }
-    .search { margin-bottom: 8px; }
-    .recent-item { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #eef4fb; }
-    .avatar { width: 36px; height: 36px; border-radius: 50%; background: #eef6ff; color: #234e7a; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .info { display: flex; flex-direction: column; }
-    .info strong { font-size: .9rem; color: #1f3f5b; }
-    .info span { font-size: .8rem; color: #68839b; }
-    .time { font-size: .75rem; color: #89a0b5; }
-    .filter-row { display: flex; gap: 8px; margin-bottom: 10px; }
-    .chip { border: 1px solid #d7e6f6; background: #fff; padding: 6px 10px; border-radius: 9px; color: #476681; }
-    .chip.active { background: #eef6ff; color: #0f5ea8; border-color: #9bc5ec; }
-    .entry { border: 1px solid #e3eef9; border-radius: 10px; padding: 12px; margin-bottom: 10px; transition: transform .2s ease; }
-    .entry:hover { transform: translateY(-2px); }
-    .entry-head { display: flex; justify-content: space-between; color: #1d3f5d; margin-bottom: 6px; }
-    .entry p { color: #2d4f6b; margin-bottom: 6px; }
-    .meta { color: #7a95ab; font-size: .8rem; }
-    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
-    .kpis div { border: 1px solid #e4eef8; border-radius: 10px; text-align: center; padding: 10px 6px; display: flex; flex-direction: column; }
-    .kpis strong { color: #153b5a; font-size: 1.2rem; }
-    .kpis span { color: #6b879f; font-size: .75rem; }
-    .appt-list { display: grid; gap: 8px; }
-    .appt { border: 1px solid #e4eef8; border-radius: 9px; padding: 10px; display: flex; flex-direction: column; }
-    .appt strong { color: #1f3f5b; }
-    .appt span { color: #7a96ad; font-size: .8rem; }
-    @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
-  `],
+  imports: [CommonModule, RouterLink],
+  templateUrl: './customer-dashboard.component.html',
+  styleUrl: './customer-dashboard.component.scss',
 })
-export class CustomerDashboardComponent {
-  recent = signal([
-    { initials: 'LT', name: 'Linda Thomas', note: 'Thanks so much!', time: '1:43 pm' },
-    { initials: 'HS', name: 'Harvey Spector', note: 'Chat with smartbot', time: '1:12 pm' },
-    { initials: 'MR', name: 'Martin Ross', note: 'Outbound call', time: '12:10 pm' },
-    { initials: 'AD', name: 'Anna Duke', note: 'Booking cancelled/no show', time: '11:23 am' },
-  ]);
+export class CustomerDashboardComponent implements OnInit {
+  userName = computed(() => this.authService.user()?.firstName ?? 'Guest');
+  bookings = signal<Booking[]>([]);
+  services = signal<SpaService[]>([]);
+  vouchers = signal<GiftVoucher[]>([]);
+  membershipPlans = signal<MembershipPlan[]>([]);
+  isLoading = signal(true);
 
-  timeline = signal([
-    { id: 't1', type: 'Appointment', message: 'Haircut + blowout with Haley scheduled.', center: 'Boston', amount: 140, time: '10:01 am' },
-    { id: 't2', type: 'Feedback', message: 'Great service, fast check-in and friendly staff.', center: 'Boston', amount: 100, time: '10:23 am' },
-    { id: 't3', type: 'Joined waitlist', message: 'Requested next available slot for manicure.', center: 'South grand', amount: 90, time: '11:58 am' },
-  ]);
+  readonly upcomingBookings = computed(() =>
+    this.bookings().filter(b => b.status === 'confirmed' || b.status === 'pending').slice(0, 3)
+  );
+
+  readonly completedCount = computed(() =>
+    this.bookings().filter(b => b.status === 'completed').length
+  );
+
+  readonly totalSpent = computed(() =>
+    this.bookings().reduce((sum, b) => sum + b.totalPrice, 0)
+  );
+
+  readonly popularServices = computed(() =>
+    this.services().slice(0, 4)
+  );
+
+  quickActions = [
+    { label: 'Book Appointment', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>', route: '/customer/book', color: '#1a6b8a' },
+    { label: 'My Appointments', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', route: '/customer/appointments', color: '#2ecc71' },
+    { label: 'Gift Vouchers', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8V22"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/></svg>', route: '/customer/vouchers', color: '#f5a623' },
+    { label: 'View Profile', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>', route: '/customer/profile', color: '#9b59b6' },
+  ];
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly mockData: MockDataService,
+  ) {}
+
+  ngOnInit(): void {
+    this.mockData.getBookings().subscribe(b => { this.bookings.set(b); this.isLoading.set(false); });
+    this.mockData.getServices().subscribe(s => this.services.set(s));
+    this.mockData.getVouchers().subscribe(v => this.vouchers.set(v));
+    this.mockData.getMembershipPlans().subscribe(p => this.membershipPlans.set(p));
+  }
+
+  getStatusClass(status: string): string {
+    const map: Record<string, string> = { confirmed: 'status-confirmed', pending: 'status-pending', cancelled: 'status-cancelled', completed: 'status-completed' };
+    return map[status] ?? '';
+  }
+
+  getServiceIcon(category: string): string {
+    const icons: Record<string, string> = {
+      massage: '💆',
+      facial: '✨',
+      'body-treatment': '🧖',
+      nail: '💅',
+      hair: '💇',
+      package: '🎁',
+    };
+    return icons[category] ?? '🌿';
+  }
 }
-

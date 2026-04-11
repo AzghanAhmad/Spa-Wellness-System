@@ -1,0 +1,218 @@
+<div class="dash-page">
+  <!-- KPI Cards -->
+  <div class="kpi-row stagger-children">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(26,107,138,0.1); color: #1a6b8a">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-value">{{ upcomingBookings().length }}</span>
+        <span class="kpi-label">Upcoming</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(46,204,113,0.1); color: #2ecc71">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-value">{{ completedCount() }}</span>
+        <span class="kpi-label">Completed</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(155,89,182,0.1); color: #9b59b6">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-value">42</span>
+        <span class="kpi-label">Points Earned</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(245,166,35,0.1); color: #f5a623">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-value">${{ totalSpent() }}</span>
+        <span class="kpi-label">Total Spent</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="dash-grid">
+    <!-- Left Column -->
+    <div class="dash-left">
+      <!-- Quick Actions -->
+      <div class="card section-card">
+        <div class="section-head">
+          <h3>Quick Actions</h3>
+        </div>
+        <div class="quick-actions-grid">
+          @for (action of quickActions; track action.label) {
+            <a class="quick-action" [routerLink]="action.route">
+              <div class="qa-icon" [style.background]="action.color + '14'" [style.color]="action.color" [innerHTML]="action.icon"></div>
+              <span class="qa-label">{{ action.label }}</span>
+            </a>
+          }
+        </div>
+      </div>
+
+      <!-- Upcoming Appointments -->
+      <div class="card section-card">
+        <div class="section-head">
+          <h3>Upcoming Appointments</h3>
+          <a routerLink="/customer/appointments" class="see-all">View All</a>
+        </div>
+        <div class="appointments-list">
+          @if (upcomingBookings().length === 0) {
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" style="color: var(--text-tertiary)"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <p>No upcoming appointments</p>
+              <a routerLink="/customer/book" class="btn-primary btn-sm">Book Now</a>
+            </div>
+          }
+          @for (booking of upcomingBookings(); track booking.id) {
+            <div class="appointment-card animate-fade-in-up">
+              <div class="appt-time-badge">
+                <span class="appt-day">{{ booking.date | date:'dd' }}</span>
+                <span class="appt-month">{{ booking.date | date:'MMM' }}</span>
+              </div>
+              <div class="appt-details">
+                <div class="appt-services">
+                  @for (s of booking.services; track s.serviceId) {
+                    <span class="appt-svc-name">{{ s.serviceName }}</span>
+                  }
+                </div>
+                <div class="appt-meta">
+                  <span>{{ booking.startTime }} – {{ booking.endTime }}</span>
+                  <span class="meta-dot">•</span>
+                  <span>{{ booking.therapistName }}</span>
+                </div>
+                @if (booking.roomName) {
+                  <span class="appt-room">{{ booking.roomName }}</span>
+                }
+              </div>
+              <div class="appt-right">
+                <span class="appt-status" [class]="getStatusClass(booking.status)">{{ booking.status }}</span>
+                <span class="appt-price">${{ booking.totalPrice }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Popular Services -->
+      <div class="card section-card">
+        <div class="section-head">
+          <h3>Popular Services</h3>
+          <a routerLink="/customer/book" class="see-all">Browse All</a>
+        </div>
+        <div class="services-grid">
+          @for (service of popularServices(); track service.id) {
+            <div class="service-card">
+              <div class="svc-emoji">{{ getServiceIcon(service.category) }}</div>
+              <div class="svc-info">
+                <strong>{{ service.name }}</strong>
+                <span class="svc-desc">{{ service.description }}</span>
+                <div class="svc-bottom">
+                  <span class="svc-duration">{{ service.duration }} min</span>
+                  <span class="svc-price">${{ service.price }}</span>
+                </div>
+              </div>
+              <a routerLink="/customer/book" class="svc-book-btn">Book</a>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="dash-right">
+      <!-- Membership Card -->
+      <div class="card membership-preview">
+        <div class="membership-gradient">
+          <div class="mp-badge">Active Member</div>
+          <h4>Premium Bliss</h4>
+          <p>20% off all services • 3 free/month</p>
+        </div>
+        <div class="mp-stats">
+          <div class="mp-stat">
+            <span class="mp-stat-val">28</span>
+            <span class="mp-stat-label">Used</span>
+          </div>
+          <div class="mp-stat">
+            <span class="mp-stat-val">8</span>
+            <span class="mp-stat-label">Remaining</span>
+          </div>
+          <div class="mp-stat">
+            <span class="mp-stat-val">77%</span>
+            <span class="mp-stat-label">Used</span>
+          </div>
+        </div>
+        <a routerLink="/customer/memberships" class="mp-link">Manage Membership →</a>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card section-card">
+        <div class="section-head">
+          <h3>Recent Activity</h3>
+          <a routerLink="/customer/timeline" class="see-all">View All</a>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="act-dot" style="background: #2ecc71"></div>
+            <div class="act-info">
+              <strong>Appointment completed</strong>
+              <span>Swedish Massage with Emma Wilson</span>
+              <span class="act-time">2 days ago</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background: #f5a623"></div>
+            <div class="act-info">
+              <strong>Payment received</strong>
+              <span>$120.00 via Credit Card</span>
+              <span class="act-time">2 days ago</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background: #1a6b8a"></div>
+            <div class="act-info">
+              <strong>Booking confirmed</strong>
+              <span>Deep Tissue Massage on Mar 25</span>
+              <span class="act-time">3 days ago</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background: #9b59b6"></div>
+            <div class="act-info">
+              <strong>Feedback submitted</strong>
+              <span>5 stars for Hot Stone Therapy</span>
+              <span class="act-time">5 days ago</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="act-dot" style="background: #e74c3c"></div>
+            <div class="act-info">
+              <strong>Gift voucher received</strong>
+              <span>$100 voucher from Alice Thompson</span>
+              <span class="act-time">1 week ago</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wellness Tips -->
+      <div class="card tips-card">
+        <div class="section-head">
+          <h3>💡 Wellness Tip</h3>
+        </div>
+        <div class="tip-content">
+          <p>"Regular massage therapy can reduce cortisol levels by up to 30% and increase serotonin by 28%. Schedule your next session to keep the benefits flowing!"</p>
+          <a routerLink="/customer/book" class="btn-outline btn-sm" style="margin-top: 10px">Book a Session</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

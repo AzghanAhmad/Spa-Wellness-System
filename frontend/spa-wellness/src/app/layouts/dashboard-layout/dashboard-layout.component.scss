@@ -5,13 +5,17 @@
   position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-width);
   background: var(--bg-sidebar); display: flex; flex-direction: column;
   align-items: center; z-index: 100; padding: 12px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .sidebar-icon-btn {
-  width: 40px; height: 40px; border-radius: var(--radius-md); border: none;
+  width: 40px; height: 40px; min-height: 40px; /* prevent shrinking */
+  border-radius: var(--radius-md); border: none;
   background: transparent; color: rgba(255,255,255,0.6); cursor: pointer;
   display: flex; align-items: center; justify-content: center; position: relative;
   transition: all var(--transition-fast); text-decoration: none; margin: 2px 0;
+  flex-shrink: 0; /* never shrink icons */
 
   svg, ::ng-deep svg { width: 20px; height: 20px; }
 
@@ -29,7 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 0; /* prevents any extra whitespace from collapsing the SVG */
+  line-height: 0;
 }
 
 .icon-wrap ::ng-deep svg {
@@ -46,9 +50,13 @@
 }
 .sidebar-icon-btn:hover .icon-tooltip { display: block; }
 
-.search-icon-btn { margin-bottom: 12px; }
-.sidebar-icons-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
-.sidebar-bottom-icons { display: flex; flex-direction: column; gap: 4px; padding: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+.search-icon-btn { margin-bottom: 12px; flex-shrink: 0; }
+.sidebar-icons-nav {
+  flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 8px;
+  min-height: 0; /* allow flex child to shrink for scrolling */
+  overflow-y: auto; overflow-x: hidden;
+}
+.sidebar-bottom-icons { display: flex; flex-direction: column; gap: 4px; padding: 8px; border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
 
 /* Mobile sidebar */
 .mobile-overlay {
