@@ -18,6 +18,7 @@ export interface Therapist {
   email: string;
   phone: string;
   avatar?: string;
+  role?: string;
   specialties: ServiceCategory[];
   isAvailable: boolean;
   workingHours: WorkingHours;

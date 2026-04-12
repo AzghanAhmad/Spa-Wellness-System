@@ -11,9 +11,10 @@
   <!-- Stats Bar -->
   <div class="stats-bar stagger-children">
     <div class="stat-chip" [class.active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All <span class="chip-count">{{ statusCounts().total }}</span></div>
-    <div class="stat-chip" [class.active]="statusFilter() === 'confirmed'" (click)="statusFilter.set('confirmed')">Confirmed <span class="chip-count success">{{ statusCounts().confirmed }}</span></div>
-    <div class="stat-chip" [class.active]="statusFilter() === 'pending'" (click)="statusFilter.set('pending')">Pending <span class="chip-count warning">{{ statusCounts().pending }}</span></div>
-    <div class="stat-chip" [class.active]="statusFilter() === 'completed'" (click)="statusFilter.set('completed')">Completed <span class="chip-count info">{{ statusCounts().completed }}</span></div>
+    <div class="stat-chip" [class.active]="statusFilter() === 'expected'" (click)="statusFilter.set('expected')">Expected <span class="chip-count info">{{ statusCounts().expected }}</span></div>
+    <div class="stat-chip" [class.active]="statusFilter() === 'arrived'" (click)="statusFilter.set('arrived')">Arrived <span class="chip-count warning">{{ statusCounts().arrived }}</span></div>
+    <div class="stat-chip" [class.active]="statusFilter() === 'departed'" (click)="statusFilter.set('departed')">Departed <span class="chip-count success">{{ statusCounts().departed }}</span></div>
+    <div class="stat-chip" [class.active]="statusFilter() === 'no-show'" (click)="statusFilter.set('no-show')">No Show <span class="chip-count danger">{{ statusCounts()['no-show'] }}</span></div>
     <div class="stat-chip" [class.active]="statusFilter() === 'cancelled'" (click)="statusFilter.set('cancelled')">Cancelled <span class="chip-count danger">{{ statusCounts().cancelled }}</span></div>
   </div>
 
@@ -21,46 +22,170 @@
   <div class="card calendar-section">
     <div class="calendar-header">
       <div class="calendar-nav">
-        <button class="nav-arrow" (click)="navigateWeek(-1)">‹</button>
-        <button class="nav-arrow" (click)="navigateWeek(1)">›</button>
-        <span class="calendar-title">{{ formatMonth(currentDate()) }}</span>
+        <button class="nav-arrow" (click)="navigate(-1)">‹</button>
+        <button class="nav-arrow" (click)="navigate(1)">›</button>
+        <span class="calendar-title">{{ getCalendarTitle() }}</span>
       </div>
-      <div class="search-bar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" placeholder="Search bookings..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+      <div class="calendar-controls">
+        <div class="view-toggle">
+          <button class="view-btn" [class.active]="calendarView() === 'month'" (click)="calendarView.set('month')">Month</button>
+          <button class="view-btn" [class.active]="calendarView() === 'week'" (click)="calendarView.set('week')">Week</button>
+          <button class="view-btn" [class.active]="calendarView() === 'day'" (click)="calendarView.set('day')">Day</button>
+        </div>
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search bookings..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+        </div>
       </div>
     </div>
 
-    <!-- Weekly Calendar Grid -->
-    <div class="calendar-grid">
-      <div class="calendar-head-row">
-        <div class="time-col"></div>
-        @for (day of weekDays(); track day.getTime()) {
-          <div class="day-col-head" [class.today]="isToday(day)">
-            <span class="day-name">{{ formatDayName(day) }}</span>
-            <span class="day-num" [class.today-num]="isToday(day)">{{ formatDayNum(day) }}</span>
-          </div>
-        }
+    <!-- Month View -->
+    @if (calendarView() === 'month') {
+      <div class="month-grid">
+        <div class="month-dow-row">
+          @for (d of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; track d) {
+            <div class="month-dow">{{ d }}</div>
+          }
+        </div>
+        <div class="month-cells">
+          @for (day of monthDays(); track $index) {
+            <div class="month-cell" [class.today]="day && isToday(day)" [class.empty]="!day">
+              @if (day) {
+                <span class="month-day-num" [class.today-num]="isToday(day)">{{ day.getDate() }}</span>
+                <div class="month-bookings">
+                  @for (b of getBookingsForDay(day).slice(0, 3); track b.id) {
+                    <div class="month-booking-dot" [style.background]="getBlockBg(b.status)"
+                         (click)="openPopup($event, b)">
+                      {{ b.customerName.split(' ')[0] }}
+                    </div>
+                  }
+                  @if (getBookingsForDay(day).length > 3) {
+                    <span class="month-more">+{{ getBookingsForDay(day).length - 3 }} more</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
-      <div class="calendar-body">
-        @for (time of timeSlots; track time) {
-          <div class="calendar-row">
-            <div class="time-label">{{ time }}</div>
-            @for (day of weekDays(); track day.getTime()) {
-              <div class="calendar-cell" [class.today-col]="isToday(day)">
-                @for (booking of getBookingsForSlot(day, time); track booking.id) {
-                  <div class="booking-chip" [style.border-left-color]="getStatusColor(booking.status)"
-                       (click)="showBookingDetail.set(booking)">
-                    <span class="chip-name">{{ booking.customerName }}</span>
-                    <span class="chip-svc">{{ booking.services[0].serviceName }}</span>
-                  </div>
-                }
+    }
+
+    <!-- Week View -->
+    @if (calendarView() === 'week') {
+      <div class="calendar-grid">
+        <div class="calendar-head-row">
+          <div class="time-col"></div>
+          @for (day of weekDays(); track day.getTime()) {
+            <div class="day-col-head" [class.today]="isToday(day)">
+              <span class="day-name">{{ formatDayName(day) }}</span>
+              <span class="day-num" [class.today-num]="isToday(day)">{{ formatDayNum(day) }}</span>
+            </div>
+          }
+        </div>
+        <div class="calendar-body" (scroll)="onCalendarScroll()">
+          @for (time of timeSlots; track time) {
+            <div class="calendar-row">
+              <div class="time-label">{{ time }}</div>
+              @for (day of weekDays(); track day.getTime()) {
+                <div class="calendar-cell" [class.today-col]="isToday(day)">
+                  @for (booking of getBookingsForSlot(day, time); track booking.id) {
+                    <div class="booking-chip"
+                         [style.background]="getBlockBg(booking.status)"
+                         (click)="openPopup($event, booking)">
+                      <span class="chip-name">{{ booking.customerName }}</span>
+                      <span class="chip-svc">{{ booking.services[0].serviceName }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Day View: Therapist Columns -->
+    @if (calendarView() === 'day') {
+      <div class="day-view-grid">
+        <div class="day-head-row" [style.grid-template-columns]="'64px repeat(' + therapists().length + ', 1fr)'">
+          <div class="time-col-head"></div>
+          @for (therapist of therapists(); track therapist.id) {
+            <div class="therapist-col-head" [class.unavailable]="!isTherapistAvailable(therapist)">
+              <div class="therapist-avatar">{{ therapist.name.split(' ').map(n => n[0]).join('') }}</div>
+              <div class="therapist-info">
+                <span class="therapist-name">{{ therapist.name }}</span>
+                <span class="therapist-role">{{ therapist.role ?? 'Spa Therapist' }}</span>
+                <span class="therapist-status" [class.available]="isTherapistAvailable(therapist)" [class.off]="!isTherapistAvailable(therapist)">
+                  {{ isTherapistAvailable(therapist) ? 'Available' : 'Day Off' }}
+                </span>
               </div>
-            }
-          </div>
-        }
+            </div>
+          }
+        </div>
+        <div class="day-body" (scroll)="onCalendarScroll()">
+          @for (time of timeSlots; track time) {
+            <div class="day-row" [style.grid-template-columns]="'64px repeat(' + therapists().length + ', 1fr)'">
+              <div class="time-label-day">{{ time }}</div>
+              @for (therapist of therapists(); track therapist.id) {
+                <div class="day-cell" [class.off-hours]="!isTherapistWorkingAt(therapist, time)">
+                  @for (booking of getBookingsForTherapistSlot(therapist.id, time); track booking.id) {
+                    @if (isBookingSlotStart(booking, time)) {
+                      <div class="day-booking-block"
+                           [style.background]="getBlockBg(booking.status)"
+                           [style.--span]="getBookingSpanRows(booking)"
+                           (click)="openPopup($event, booking)">
+                        <span class="block-time">{{ booking.startTime }} – {{ booking.endTime }}</span>
+                        <span class="block-name">{{ booking.customerName }}</span>
+                        <span class="block-svc">{{ booking.services[0].serviceName }}</span>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
-    </div>
+    }
+
+    <!-- Booking Popup (fixed to viewport, repositions on calendar scroll) -->
+    @if (activePopup()) {
+      <div class="booking-popup" style="position:fixed"
+           [style.left.px]="activePopup()!.x" [style.top.px]="activePopup()!.y"
+           (click)="$event.stopPropagation()">
+        <div class="popup-header">
+          <div class="popup-id">#{{ activePopup()!.booking.id.toUpperCase() }}</div>
+          <div class="popup-time">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ activePopup()!.booking.startTime }} – {{ activePopup()!.booking.endTime }}
+          </div>
+          <button class="popup-close" (click)="activePopup.set(null)">✕</button>
+        </div>
+        <div class="popup-client">
+          <div class="popup-client-avatar">{{ activePopup()!.booking.customerName.split(' ').map(n => n[0]).join('') }}</div>
+          <span class="popup-client-name">{{ activePopup()!.booking.customerName }}</span>
+        </div>
+        <div class="popup-status-row">
+          <select class="popup-status-select" [ngModel]="activePopup()!.booking.status"
+                  (ngModelChange)="updatePopupStatus($event)">
+            @for (s of appointmentStatuses; track s.value) {
+              <option [value]="s.value">{{ s.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="popup-therapist">
+          <span class="popup-therapist-name">{{ activePopup()!.booking.therapistName }}</span>
+          @if (getTherapistById(activePopup()!.booking.therapistId); as t) {
+            <span class="popup-therapist-role">{{ t.role ?? 'Spa Therapist' }}</span>
+          }
+        </div>
+        <div class="popup-room">{{ activePopup()!.booking.roomName ?? 'Room not assigned' }}</div>
+        @for (svc of activePopup()!.booking.services; track svc.serviceId) {
+          <div class="popup-service">{{ svc.serviceName }} – {{ svc.duration }}' – ${{ svc.price }}</div>
+        }
+        <div class="popup-total">Total: <strong>${{ activePopup()!.booking.totalPrice }}</strong></div>
+      </div>
+    }
   </div>
 
   <!-- Bookings Table -->
@@ -89,9 +214,9 @@
               <td>{{ booking.therapistName }}</td>
               <td>{{ booking.date }}</td>
               <td>{{ booking.startTime }} – {{ booking.endTime }}</td>
-              <td><span [class]="getStatusClass(booking.status)">{{ booking.status }}</span></td>
+              <td><span [class]="getStatusClass(booking.status)">{{ getStatusLabel(booking.status) }}</span></td>
               <td class="amount-cell">${{ booking.totalPrice }}</td>
-              <td><button class="btn-ghost btn-icon btn-sm" (click)="showBookingDetail.set(booking)">⋯</button></td>
+              <td><button class="btn-ghost btn-icon btn-sm" (click)="openPopup($event, booking)">⋯</button></td>
             </tr>
           }
         </tbody>
@@ -123,35 +248,6 @@
           <div class="form-group"><label>Notes</label><textarea class="input" rows="3" [(ngModel)]="newBooking.notes"></textarea></div>
         </div>
         <div class="modal-foot"><button class="btn-secondary" (click)="showNewBookingModal.set(false)">Cancel</button><button class="btn-primary" (click)="createBooking()">Create Booking</button></div>
-      </div>
-    </div>
-  }
-
-  <!-- Booking Detail Drawer -->
-  @if (showBookingDetail()) {
-    <div class="drawer-overlay" (click)="showBookingDetail.set(null)"></div>
-    <div class="drawer">
-      <div class="drawer-head"><h3>Booking Details</h3><button class="btn-ghost btn-icon" (click)="showBookingDetail.set(null)">✕</button></div>
-      <div class="drawer-body">
-        <div class="detail-profile">
-          <div class="detail-avatar">{{ showBookingDetail()!.customerName.split(' ').map(n => n[0]).join('') }}</div>
-          <div><h4>{{ showBookingDetail()!.customerName }}</h4><span [class]="getStatusClass(showBookingDetail()!.status)">{{ showBookingDetail()!.status }}</span></div>
-        </div>
-        <div class="detail-section"><h5>Services</h5>@for (s of showBookingDetail()!.services; track s.serviceId) { <div class="detail-row"><span>{{ s.serviceName }}</span><span class="amount-cell">${{ s.price }}</span></div> }</div>
-        <div class="detail-section"><h5>Details</h5>
-          <div class="detail-row"><span class="row-label">Therapist</span><span>{{ showBookingDetail()!.therapistName }}</span></div>
-          <div class="detail-row"><span class="row-label">Room</span><span>{{ showBookingDetail()!.roomName ?? 'Not assigned' }}</span></div>
-          <div class="detail-row"><span class="row-label">Date</span><span>{{ showBookingDetail()!.date }}</span></div>
-          <div class="detail-row"><span class="row-label">Time</span><span>{{ showBookingDetail()!.startTime }} – {{ showBookingDetail()!.endTime }}</span></div>
-          <div class="detail-row"><span class="row-label">Total</span><span class="amount-cell">${{ showBookingDetail()!.totalPrice }}</span></div>
-        </div>
-        <div class="detail-section"><h5>Actions</h5>
-          <div class="action-buttons">
-            <button class="action-btn confirm" (click)="updateBookingStatus(showBookingDetail()!, 'confirmed')">Confirm</button>
-            <button class="action-btn complete" (click)="updateBookingStatus(showBookingDetail()!, 'completed')">Complete</button>
-            <button class="action-btn cancel" (click)="updateBookingStatus(showBookingDetail()!, 'cancelled')">Cancel</button>
-          </div>
-        </div>
       </div>
     </div>
   }

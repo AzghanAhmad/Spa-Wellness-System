@@ -1,4 +1,4 @@
-export type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no-show';
+export type BookingStatus = 'expected' | 'arrived' | 'departed' | 'no-show' | 'cancelled' | 'confirmed' | 'pending' | 'completed';
 
 export interface TimeSlot {
   start: string; // ISO datetime

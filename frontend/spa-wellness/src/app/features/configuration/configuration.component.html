@@ -1,0 +1,361 @@
+<div class="config-layout">
+
+  <!-- Sub-nav sidebar -->
+  <aside class="config-subnav">
+    <div class="subnav-title">Configuration</div>
+    <nav>
+      @for (item of subNavItems; track item.page) {
+        <button class="subnav-item" [class.active]="activePage() === item.page" (click)="setPage(item.page)">
+          <span class="subnav-icon" [innerHTML]="item.icon"></span>
+          <span>{{ item.label }}</span>
+        </button>
+      }
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <div class="config-main">
+
+    <!-- Page header -->
+    <div class="config-page-header">
+      <div class="config-breadcrumb">
+        <span class="breadcrumb-root">Configuration</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="breadcrumb-current">{{ pageTitle }}</span>
+      </div>
+      <button class="btn-primary" (click)="openAdd()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add {{ pageTitle.slice(0,-1) === pageTitle ? pageTitle : pageTitle.slice(0,-1) }}
+      </button>
+    </div>
+
+    <!-- Search bar -->
+    <div class="config-toolbar">
+      <div class="config-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); currentPage.set(1)">
+      </div>
+      <span class="config-count">{{ totalItemsForPage() }} items</span>
+    </div>
+
+    <!-- ═══ AREAS TABLE ═══ -->
+    @if (activePage() === 'areas') {
+      <div class="config-card">
+        <div class="table-wrap">
+          <table class="cfg-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>Code</th><th>Description</th><th>Capacity</th>
+                <th>Group</th><th>For Group</th><th>Shared</th>
+                <th>Online</th><th>Active</th><th>Order</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (area of paginatedAreas(); track area.id) {
+                <tr>
+                  <td class="id-cell">{{ area.id }}</td>
+                  <td><span class="code-badge">{{ area.code }}</span></td>
+                  <td class="desc-cell">{{ area.description }}</td>
+                  <td class="center-cell">{{ area.maxCapacity }}</td>
+                  <td>{{ getGroupName(area.groupId) }}</td>
+                  <td class="center-cell"><span class="bool-icon" [class.yes]="area.forGroup">{{ area.forGroup ? '✓' : '' }}</span></td>
+                  <td class="center-cell"><span class="bool-icon yes">✓</span></td>
+                  <td class="center-cell"><span class="bool-icon" [class.yes]="area.availableOnline">{{ area.availableOnline ? '✓' : '' }}</span></td>
+                  <td class="center-cell">
+                    <button class="toggle-btn" [class.on]="area.active" (click)="toggleActive(area.id)">
+                      {{ area.active ? 'Active' : 'Inactive' }}
+                    </button>
+                  </td>
+                  <td class="center-cell">{{ area.order }}</td>
+                  <td class="actions-cell">
+                    <button class="action-icon edit" (click)="openEdit(area)" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-icon delete" (click)="deleteItem(area.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (paginatedAreas().length === 0) {
+                <tr><td colspan="11" class="empty-row">No areas found</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ AREA GROUPS TABLE ═══ -->
+    @if (activePage() === 'area-groups') {
+      <div class="config-card">
+        <div class="table-wrap">
+          <table class="cfg-table">
+            <thead>
+              <tr><th>ID</th><th>Description</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (grp of paginatedAreaGroups(); track grp.id) {
+                <tr>
+                  <td class="id-cell">{{ grp.id }}</td>
+                  <td class="desc-cell">{{ grp.description }}</td>
+                  <td class="actions-cell">
+                    <button class="action-icon edit" (click)="openEdit(grp)" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-icon delete" (click)="deleteItem(grp.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (paginatedAreaGroups().length === 0) {
+                <tr><td colspan="3" class="empty-row">No area groups found</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ PACKAGES TABLE ═══ -->
+    @if (activePage() === 'packages') {
+      <div class="config-card">
+        <div class="table-wrap">
+          <table class="cfg-table">
+            <thead>
+              <tr><th>ID</th><th>Code</th><th>Name</th><th>Category</th><th>Duration</th><th>Services</th><th>Active</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (pkg of paginatedPackages(); track pkg.id) {
+                <tr>
+                  <td class="id-cell">{{ pkg.id }}</td>
+                  <td><span class="code-badge">{{ pkg.code }}</span></td>
+                  <td class="desc-cell">{{ pkg.shortDescription }}</td>
+                  <td><span class="category-badge">{{ pkg.category }}</span></td>
+                  <td>{{ pkg.duration }} {{ pkg.durationType }}</td>
+                  <td class="center-cell">{{ pkg.services }}</td>
+                  <td class="center-cell">
+                    <button class="toggle-btn" [class.on]="pkg.active" (click)="toggleActive(pkg.id)">
+                      {{ pkg.active ? 'Active' : 'Inactive' }}
+                    </button>
+                  </td>
+                  <td class="actions-cell">
+                    <button class="action-icon edit" (click)="openEdit(pkg)" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-icon delete" (click)="deleteItem(pkg.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (paginatedPackages().length === 0) {
+                <tr><td colspan="8" class="empty-row">No packages found</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ SERVICE GROUPS TABLE ═══ -->
+    @if (activePage() === 'service-groups') {
+      <div class="config-card">
+        <div class="table-wrap">
+          <table class="cfg-table">
+            <thead>
+              <tr><th>ID</th><th>Code</th><th>Description</th><th>Order</th><th>Active</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (grp of paginatedServiceGroups(); track grp.id) {
+                <tr>
+                  <td class="id-cell">{{ grp.id }}</td>
+                  <td><span class="code-badge">{{ grp.code }}</span></td>
+                  <td class="desc-cell">{{ grp.description }}</td>
+                  <td class="center-cell">{{ grp.order }}</td>
+                  <td class="center-cell">
+                    <button class="toggle-btn" [class.on]="grp.active" (click)="toggleActive(grp.id)">
+                      {{ grp.active ? 'Active' : 'Inactive' }}
+                    </button>
+                  </td>
+                  <td class="actions-cell">
+                    <button class="action-icon edit" (click)="openEdit(grp)" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-icon delete" (click)="deleteItem(grp.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (paginatedServiceGroups().length === 0) {
+                <tr><td colspan="6" class="empty-row">No service groups found</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ SERVICES TABLE ═══ -->
+    @if (activePage() === 'services') {
+      <div class="config-card">
+        <div class="table-wrap">
+          <table class="cfg-table">
+            <thead>
+              <tr><th>ID</th><th>Code</th><th>Name</th><th>Group</th><th>Duration</th><th>Price</th><th>Online</th><th>Active</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (svc of paginatedServices(); track svc.id) {
+                <tr>
+                  <td class="id-cell">{{ svc.id }}</td>
+                  <td><span class="code-badge">{{ svc.code }}</span></td>
+                  <td class="desc-cell">{{ svc.name }}</td>
+                  <td><span class="group-pill">{{ svc.groupName }}</span></td>
+                  <td>{{ svc.duration }} min</td>
+                  <td class="price-cell">${{ svc.price }}</td>
+                  <td class="center-cell"><span class="bool-icon" [class.yes]="svc.availableOnline">{{ svc.availableOnline ? '✓' : '' }}</span></td>
+                  <td class="center-cell">
+                    <button class="toggle-btn" [class.on]="svc.active" (click)="toggleActive(svc.id)">
+                      {{ svc.active ? 'Active' : 'Inactive' }}
+                    </button>
+                  </td>
+                  <td class="actions-cell">
+                    <button class="action-icon edit" (click)="openEdit(svc)" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-icon delete" (click)="deleteItem(svc.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (paginatedServices().length === 0) {
+                <tr><td colspan="9" class="empty-row">No services found</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ PAGINATION ═══ -->
+    <div class="pagination-bar">
+      <div class="page-size-group">
+        @for (size of pageSizeOptions; track size) {
+          <button class="page-size-btn" [class.active]="pageSize() === size" (click)="setPageSize(size)">{{ size }}</button>
+        }
+      </div>
+      <div class="page-info">
+        Page {{ currentPage() }} of {{ totalPagesComputed() }}
+        &nbsp;·&nbsp; {{ totalItemsForPage() }} items
+      </div>
+      <div class="page-nav">
+        <button class="page-nav-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹</button>
+        @for (p of pageNumbersComputed(); track $index) {
+          @if (isNumber(p)) {
+            <button class="page-nav-btn" [class.active]="currentPage() === p" (click)="goToPage(p)">{{ p }}</button>
+          } @else {
+            <span class="page-ellipsis">…</span>
+          }
+        }
+        <button class="page-nav-btn" [disabled]="currentPage() === totalPagesComputed()" (click)="goToPage(currentPage() + 1)">›</button>
+      </div>
+    </div>
+
+  </div><!-- /config-main -->
+</div>
+
+<!-- ═══ MODAL ═══ -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>{{ modalMode() === 'add' ? 'Add' : 'Edit' }} {{ pageTitle.endsWith('s') ? pageTitle.slice(0,-1) : pageTitle }}</h3>
+        <button class="modal-close" (click)="showModal.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Area form -->
+        @if (activePage() === 'areas') {
+          <div class="form-grid">
+            <div class="fg"><label>Code</label><input class="input" [(ngModel)]="areaForm().code" (ngModelChange)="areaForm.update(f=>({...f,code:$event}))"></div>
+            <div class="fg"><label>Description *</label><input class="input" [ngModel]="areaForm().description" (ngModelChange)="areaForm.update(f=>({...f,description:$event}))"></div>
+            <div class="fg"><label>Max Capacity</label><input class="input" type="number" min="1" [ngModel]="areaForm().maxCapacity" (ngModelChange)="areaForm.update(f=>({...f,maxCapacity:+$event}))"></div>
+            <div class="fg"><label>Group</label>
+              <select class="input" [ngModel]="areaForm().groupId" (ngModelChange)="areaForm.update(f=>({...f,groupId:+$event}))">
+                <option value="">None</option>
+                @for (g of areaGroups(); track g.id) { <option [value]="g.id">{{ g.description }}</option> }
+              </select>
+            </div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="areaForm().forGroup" (ngModelChange)="areaForm.update(f=>({...f,forGroup:$event}))"> For Group</label></div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="areaForm().availableOnline" (ngModelChange)="areaForm.update(f=>({...f,availableOnline:$event}))"> Available Online</label></div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="areaForm().active" (ngModelChange)="areaForm.update(f=>({...f,active:$event}))"> Active</label></div>
+          </div>
+        }
+
+        <!-- Area Group form -->
+        @if (activePage() === 'area-groups') {
+          <div class="form-grid">
+            <div class="fg fg-full"><label>Description *</label><input class="input" [ngModel]="areaGroupForm().description" (ngModelChange)="areaGroupForm.update(f=>({...f,description:$event}))"></div>
+          </div>
+        }
+
+        <!-- Package form -->
+        @if (activePage() === 'packages') {
+          <div class="form-grid">
+            <div class="fg"><label>Code</label><input class="input" [ngModel]="packageForm().code" (ngModelChange)="packageForm.update(f=>({...f,code:$event}))"></div>
+            <div class="fg"><label>Name *</label><input class="input" [ngModel]="packageForm().shortDescription" (ngModelChange)="packageForm.update(f=>({...f,shortDescription:$event}))"></div>
+            <div class="fg fg-full"><label>Description</label><textarea class="input" rows="2" [ngModel]="packageForm().longDescription" (ngModelChange)="packageForm.update(f=>({...f,longDescription:$event}))"></textarea></div>
+            <div class="fg"><label>Category</label>
+              <select class="input" [ngModel]="packageForm().category" (ngModelChange)="packageForm.update(f=>({...f,category:$event}))">
+                <option>Combosale Open</option><option>Combosale Closed</option>
+              </select>
+            </div>
+            <div class="fg"><label>Duration Type</label>
+              <select class="input" [ngModel]="packageForm().durationType" (ngModelChange)="packageForm.update(f=>({...f,durationType:$event}))">
+                <option>Days</option><option>Months</option><option>Years</option>
+              </select>
+            </div>
+            <div class="fg"><label>Duration</label><input class="input" type="number" min="1" [ngModel]="packageForm().duration" (ngModelChange)="packageForm.update(f=>({...f,duration:+$event}))"></div>
+            <div class="fg"><label>Services Count</label><input class="input" type="number" min="0" [ngModel]="packageForm().services" (ngModelChange)="packageForm.update(f=>({...f,services:+$event}))"></div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="packageForm().active" (ngModelChange)="packageForm.update(f=>({...f,active:$event}))"> Active</label></div>
+          </div>
+        }
+
+        <!-- Service Group form -->
+        @if (activePage() === 'service-groups') {
+          <div class="form-grid">
+            <div class="fg"><label>Code</label><input class="input" [ngModel]="serviceGroupForm().code" (ngModelChange)="serviceGroupForm.update(f=>({...f,code:$event}))"></div>
+            <div class="fg"><label>Description *</label><input class="input" [ngModel]="serviceGroupForm().description" (ngModelChange)="serviceGroupForm.update(f=>({...f,description:$event}))"></div>
+            <div class="fg"><label>Order</label><input class="input" type="number" min="1" [ngModel]="serviceGroupForm().order" (ngModelChange)="serviceGroupForm.update(f=>({...f,order:+$event}))"></div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="serviceGroupForm().active" (ngModelChange)="serviceGroupForm.update(f=>({...f,active:$event}))"> Active</label></div>
+          </div>
+        }
+
+        <!-- Service form -->
+        @if (activePage() === 'services') {
+          <div class="form-grid">
+            <div class="fg"><label>Code</label><input class="input" [ngModel]="serviceForm().code" (ngModelChange)="serviceForm.update(f=>({...f,code:$event}))"></div>
+            <div class="fg"><label>Name *</label><input class="input" [ngModel]="serviceForm().name" (ngModelChange)="serviceForm.update(f=>({...f,name:$event}))"></div>
+            <div class="fg"><label>Group</label>
+              <select class="input" [ngModel]="serviceForm().groupId" (ngModelChange)="serviceForm.update(f=>({...f,groupId:+$event}))">
+                @for (g of serviceGroups(); track g.id) { <option [value]="g.id">{{ g.description }}</option> }
+              </select>
+            </div>
+            <div class="fg"><label>Duration (min)</label><input class="input" type="number" min="1" [ngModel]="serviceForm().duration" (ngModelChange)="serviceForm.update(f=>({...f,duration:+$event}))"></div>
+            <div class="fg"><label>Price ($)</label><input class="input" type="number" min="0" [ngModel]="serviceForm().price" (ngModelChange)="serviceForm.update(f=>({...f,price:+$event}))"></div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="serviceForm().availableOnline" (ngModelChange)="serviceForm.update(f=>({...f,availableOnline:$event}))"> Available Online</label></div>
+            <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="serviceForm().active" (ngModelChange)="serviceForm.update(f=>({...f,active:$event}))"> Active</label></div>
+          </div>
+        }
+
+      </div>
+      <div class="modal-foot">
+        <button class="btn-secondary" (click)="showModal.set(false)">Cancel</button>
+        <button class="btn-primary" (click)="save()">{{ modalMode() === 'add' ? 'Create' : 'Save Changes' }}</button>
+      </div>
+    </div>
+  </div>
+}

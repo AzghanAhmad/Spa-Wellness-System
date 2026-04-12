@@ -112,6 +112,13 @@ export const routes: Routes = [
             (m) => m.CommunicationsComponent,
           ),
       },
+      {
+        path: 'configuration',
+        loadComponent: () =>
+          import('./features/configuration/configuration.component').then(
+            (m) => m.ConfigurationComponent,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

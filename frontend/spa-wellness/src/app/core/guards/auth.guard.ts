@@ -4,6 +4,9 @@ import { AuthService } from '../services/auth.service';
 
 /** Root URL or staff-only top-level paths — must be listed before admin layout in routes. */
 export const matchStaffLayout: CanMatchFn = (_route, segments: UrlSegment[]) => {
+  const authService = inject(AuthService);
+  // Admins always use the admin (dashboard) layout, even for /bookings and /customers
+  if (authService.isAdmin()) return false;
   if (segments.length === 0) return true;
   const p = segments[0].path;
   return p === 'bookings' || p === 'customers';
@@ -20,10 +23,13 @@ const ADMIN_ROOT_SEGMENTS = new Set([
   'marketing',
   'forms',
   'communications',
+  'configuration',
 ]);
 
 export const matchAdminLayout: CanMatchFn = (_route, segments: UrlSegment[]) => {
-  if (segments.length === 0) return false;
+  const authService = inject(AuthService);
+  if (!authService.isAdmin()) return false;
+  if (segments.length === 0) return true;
   return ADMIN_ROOT_SEGMENTS.has(segments[0].path);
 };
 

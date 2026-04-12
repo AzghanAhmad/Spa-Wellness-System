@@ -46,11 +46,11 @@ export class MockDataService {
       sunday: { isWorking: false, start: '', end: '' },
     };
     return this.simulateDelay([
-      { id: 't1', name: 'Emma Wilson', email: 'emma@serenity.com', phone: '+1-555-0201', specialties: ['massage', 'body-treatment'], isAvailable: true, workingHours: defaultHours, rating: 4.9, totalBookings: 342 },
-      { id: 't2', name: 'Olivia Martinez', email: 'olivia@serenity.com', phone: '+1-555-0202', specialties: ['facial', 'body-treatment'], isAvailable: true, workingHours: defaultHours, rating: 4.8, totalBookings: 298 },
-      { id: 't3', name: 'Sophia Kim', email: 'sophia@serenity.com', phone: '+1-555-0203', specialties: ['massage', 'wellness'], isAvailable: false, workingHours: defaultHours, rating: 4.7, totalBookings: 265 },
-      { id: 't4', name: 'Isabella Davis', email: 'isabella@serenity.com', phone: '+1-555-0204', specialties: ['nail', 'hair'], isAvailable: true, workingHours: defaultHours, rating: 4.9, totalBookings: 310 },
-      { id: 't5', name: 'Mia Johnson', email: 'mia@serenity.com', phone: '+1-555-0205', specialties: ['massage', 'facial', 'wellness'], isAvailable: true, workingHours: defaultHours, rating: 4.6, totalBookings: 220 },
+      { id: 't1', name: 'Emma Wilson', role: 'Senior Therapist', email: 'emma@serenity.com', phone: '+1-555-0201', specialties: ['massage', 'body-treatment'], isAvailable: true, workingHours: defaultHours, rating: 4.9, totalBookings: 342 },
+      { id: 't2', name: 'Olivia Martinez', role: 'Facial Specialist', email: 'olivia@serenity.com', phone: '+1-555-0202', specialties: ['facial', 'body-treatment'], isAvailable: true, workingHours: defaultHours, rating: 4.8, totalBookings: 298 },
+      { id: 't3', name: 'Sophia Kim', role: 'Wellness Coach', email: 'sophia@serenity.com', phone: '+1-555-0203', specialties: ['massage', 'wellness'], isAvailable: false, workingHours: defaultHours, rating: 4.7, totalBookings: 265 },
+      { id: 't4', name: 'Isabella Davis', role: 'Nail & Hair Artist', email: 'isabella@serenity.com', phone: '+1-555-0204', specialties: ['nail', 'hair'], isAvailable: true, workingHours: defaultHours, rating: 4.9, totalBookings: 310 },
+      { id: 't5', name: 'Mia Johnson', role: 'Spa Therapist', email: 'mia@serenity.com', phone: '+1-555-0205', specialties: ['massage', 'facial', 'wellness'], isAvailable: true, workingHours: defaultHours, rating: 4.6, totalBookings: 220 },
     ]);
   }
 
@@ -86,14 +86,14 @@ export class MockDataService {
         id: 'b1', customerId: 'c1', customerName: 'Alice Thompson', customerEmail: 'alice@email.com', customerPhone: '+1-555-0301',
         services: [{ serviceId: 's1', serviceName: 'Swedish Massage', duration: 60, price: 120 }],
         therapistId: 't1', therapistName: 'Emma Wilson', roomId: 'r1', roomName: 'Tranquility Suite',
-        date: today, startTime: '09:00', endTime: '10:00', status: 'confirmed',
+        date: today, startTime: '09:00', endTime: '10:00', status: 'expected',
         totalPrice: 120, isGroupBooking: false, groupSize: 1, createdAt: '2024-03-20'
       },
       {
         id: 'b2', customerId: 'c2', customerName: 'Jessica Rivera', customerEmail: 'jessica@email.com',
         services: [{ serviceId: 's5', serviceName: 'Hydrating Facial', duration: 45, price: 95 }],
         therapistId: 't2', therapistName: 'Olivia Martinez', roomId: 'r3', roomName: 'Glow Studio',
-        date: today, startTime: '10:00', endTime: '10:45', status: 'confirmed',
+        date: today, startTime: '10:00', endTime: '10:45', status: 'arrived',
         totalPrice: 95, isGroupBooking: false, groupSize: 1, createdAt: '2024-03-21'
       },
       {
@@ -103,14 +103,14 @@ export class MockDataService {
           { serviceId: 's8', serviceName: 'Salt Scrub Exfoliation', duration: 45, price: 85 }
         ],
         therapistId: 't1', therapistName: 'Emma Wilson', roomId: 'r1', roomName: 'Tranquility Suite',
-        date: today, startTime: '11:00', endTime: '13:00', status: 'pending',
+        date: today, startTime: '11:00', endTime: '13:00', status: 'arrived',
         totalPrice: 235, notes: 'First time client', isGroupBooking: false, groupSize: 1, createdAt: '2024-03-22'
       },
       {
         id: 'b4', customerId: 'c4', customerName: 'Sarah Williams',
         services: [{ serviceId: 's12', serviceName: 'Wellness Package', duration: 180, price: 350 }],
         therapistId: 't5', therapistName: 'Mia Johnson', roomId: 'r2', roomName: 'Zen Room',
-        date: today, startTime: '13:00', endTime: '16:00', status: 'confirmed',
+        date: today, startTime: '13:00', endTime: '16:00', status: 'departed',
         totalPrice: 350, isGroupBooking: true, groupSize: 2, createdAt: '2024-03-22'
       },
       {
