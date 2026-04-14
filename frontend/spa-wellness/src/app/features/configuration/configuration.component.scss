@@ -223,3 +223,17 @@ textarea.input { resize: vertical; font-family: var(--font-sans); }
   .pagination-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
   .page-info { margin-left: 0; }
 }
+
+/* ── New additions ──────────────────────────────────────────────────────── */
+.filter-select {
+  padding: 7px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-md);
+  background: var(--bg-card); color: var(--text-primary); font-size: 0.8125rem;
+  font-family: var(--font-sans); cursor: pointer; outline: none; min-width: 160px;
+  &:focus { border-color: var(--color-primary); }
+}
+.type-badge {
+  display: inline-block; padding: 2px 8px; border-radius: var(--radius-full);
+  background: #f0fdf4; color: #166534; font-size: 0.6875rem; font-weight: 600;
+}
+.barcode-cell { font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); }
+.email-cell { font-size: 0.75rem; color: var(--text-secondary); }
