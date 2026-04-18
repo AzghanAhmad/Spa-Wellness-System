@@ -1,0 +1,239 @@
+@if (service()) {
+<div class="sd-page">
+
+  <!-- Header -->
+  <div class="sd-header">
+    <div class="sd-header-top">
+      <button class="back-btn" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Services
+      </button>
+      <div class="sd-breadcrumb">
+        <span>Configuration</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>Services</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="sd-bc-current">{{ service()!.name }}</span>
+      </div>
+    </div>
+
+    <div class="sd-title-row">
+      <div>
+        <h2 class="sd-name">{{ service()!.name }}</h2>
+        <div class="sd-meta">
+          <span class="code-badge">{{ service()!.code }}</span>
+          <span class="group-pill">{{ service()!.groupName }}</span>
+          <span class="type-badge">{{ service()!.type }}</span>
+          <span class="toggle-btn" [class.on]="service()!.active">{{ service()!.status }}</span>
+        </div>
+      </div>
+      <div class="sd-stats">
+        <div class="stat-box"><span class="stat-val">{{ service()!.duration }} min</span><span class="stat-lbl">Duration</span></div>
+        <div class="stat-box"><span class="stat-val">${{ service()!.price }}</span><span class="stat-lbl">Base Price</span></div>
+        <div class="stat-box"><span class="stat-val">{{ service()!.downTime }} min</span><span class="stat-lbl">Down Time</span></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="sd-tabs">
+      <button class="sd-tab" [class.active]="activeTab() === 'areas'" (click)="activeTab.set('areas')">Areas</button>
+      <button class="sd-tab" [class.active]="activeTab() === 'employee-exceptions'" (click)="activeTab.set('employee-exceptions')">Employee Exceptions</button>
+      <button class="sd-tab" [class.active]="activeTab() === 'medical-conditions'" (click)="activeTab.set('medical-conditions')">Medical Conditions</button>
+      <button class="sd-tab" [class.active]="activeTab() === 'tax-groups'" (click)="activeTab.set('tax-groups')">Tax Groups</button>
+      <button class="sd-tab" [class.active]="activeTab() === 'price-lists'" (click)="activeTab.set('price-lists')">Price Lists</button>
+      <button class="sd-tab" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Audit Log</button>
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div class="sd-body">
+
+    <!-- AREAS -->
+    @if (activeTab() === 'areas') {
+      <div class="tab-section">
+        <div class="tab-section-header"><h3>Treatment Areas</h3><p class="tab-desc">Select which rooms/areas this service can be performed in.</p></div>
+        <div class="dual-list">
+          <div class="dual-list-panel">
+            <div class="dual-list-head">Available Areas</div>
+            <div class="dual-list-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search areas..." [ngModel]="areaSearchTerm()" (ngModelChange)="areaSearchTerm.set($event)">
+            </div>
+            <div class="dual-list-items">
+              @for (area of availableAreas(); track area.id) {
+                <div class="dual-list-item" [class.selected]="areaSelection().includes(area.id)" (click)="toggleAreaSel(area.id)">
+                  {{ area.description }}<span class="area-cap">Cap: {{ area.maxCapacity }}</span>
+                </div>
+              }
+              @if (!availableAreas().length) { <div class="dual-empty">All areas assigned</div> }
+            </div>
+          </div>
+          <div class="dual-list-controls">
+            <button class="dual-btn add" (click)="addAreas()" [disabled]="!areaSelection().length">›</button>
+            <button class="dual-btn remove" (click)="removeAreas()" [disabled]="!selectedAreaSelection().length">‹</button>
+          </div>
+          <div class="dual-list-panel">
+            <div class="dual-list-head">Selected Areas <span class="count-badge">{{ selectedAreas().length }}</span></div>
+            <div class="dual-list-items">
+              @for (area of selectedAreas(); track area.id) {
+                <div class="dual-list-item" [class.selected]="selectedAreaSelection().includes(area.id)" (click)="toggleSelectedAreaSel(area.id)">
+                  {{ area.description }}<span class="area-cap">Cap: {{ area.maxCapacity }}</span>
+                </div>
+              }
+              @if (!selectedAreas().length) { <div class="dual-empty">No areas selected</div> }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- EMPLOYEE EXCEPTIONS -->
+    @if (activeTab() === 'employee-exceptions') {
+      <div class="tab-section">
+        <div class="tab-section-header"><h3>Employee Exceptions</h3><p class="tab-desc">Employees who cannot perform this service.</p></div>
+        <div class="add-row-form">
+          <select class="input" [ngModel]="newEmployeeException().employeeId" (ngModelChange)="newEmployeeException.update(f=>({...f,employeeId:$event}))">
+            <option value="">Select employee...</option>
+            @for (e of employeeList; track e.id) { <option [value]="e.id">{{ e.name }}</option> }
+          </select>
+          <input class="input" placeholder="Reason (optional)" [ngModel]="newEmployeeException().reason" (ngModelChange)="newEmployeeException.update(f=>({...f,reason:$event}))">
+          <button class="btn-primary" (click)="addEmployeeException()">Add Exception</button>
+        </div>
+        <div class="cfg-card"><table class="cfg-table">
+          <thead><tr><th>Employee</th><th>Reason</th><th></th></tr></thead>
+          <tbody>
+            @for (e of data.employeeExceptions; track e.id) {
+              <tr><td class="desc-cell">{{ e.employeeName }}</td><td>{{ e.reason || '—' }}</td>
+                <td class="actions-cell"><button class="action-icon delete" (click)="removeEmployeeException(e.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></td>
+              </tr>
+            }
+            @if (!data.employeeExceptions.length) { <tr><td colspan="3" class="empty-row">No exceptions defined</td></tr> }
+          </tbody>
+        </table></div>
+      </div>
+    }
+
+    <!-- MEDICAL CONDITIONS -->
+    @if (activeTab() === 'medical-conditions') {
+      <div class="tab-section">
+        <div class="tab-section-header"><h3>Medical Conditions</h3><p class="tab-desc">Contraindications for this service.</p></div>
+        <div class="add-row-form">
+          <input class="input" placeholder="Medical condition *" [ngModel]="newMedicalCondition().condition" (ngModelChange)="newMedicalCondition.update(f=>({...f,condition:$event}))">
+          <input class="input" placeholder="Notes / instructions" [ngModel]="newMedicalCondition().notes" (ngModelChange)="newMedicalCondition.update(f=>({...f,notes:$event}))">
+          <button class="btn-primary" (click)="addMedicalCondition()">Add Condition</button>
+        </div>
+        <div class="cfg-card"><table class="cfg-table">
+          <thead><tr><th>Condition</th><th>Notes</th><th></th></tr></thead>
+          <tbody>
+            @for (c of data.medicalConditions; track c.id) {
+              <tr><td class="desc-cell">⚠️ {{ c.condition }}</td><td>{{ c.notes || '—' }}</td>
+                <td class="actions-cell"><button class="action-icon delete" (click)="removeMedicalCondition(c.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></td>
+              </tr>
+            }
+            @if (!data.medicalConditions.length) { <tr><td colspan="3" class="empty-row">No conditions defined</td></tr> }
+          </tbody>
+        </table></div>
+      </div>
+    }
+
+    <!-- TAX GROUPS -->
+    @if (activeTab() === 'tax-groups') {
+      <div class="tab-section">
+        <div class="tab-section-header"><h3>Tax Groups</h3><p class="tab-desc">Applicable taxes for this service.</p></div>
+        <div class="add-row-form">
+          <input class="input" placeholder="Tax name *" [ngModel]="newTaxGroup().name" (ngModelChange)="newTaxGroup.update(f=>({...f,name:$event}))">
+          <select class="input" [ngModel]="newTaxGroup().type" (ngModelChange)="newTaxGroup.update(f=>({...f,type:$event}))">
+            @for (t of taxTypes; track t) { <option [value]="t">{{ t }}</option> }
+          </select>
+          <input class="input" type="number" min="0" placeholder="Rate" [ngModel]="newTaxGroup().rate" (ngModelChange)="newTaxGroup.update(f=>({...f,rate:+$event}))">
+          <button class="btn-primary" (click)="addTaxGroup()">Add Tax</button>
+        </div>
+        <div class="cfg-card"><table class="cfg-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Rate</th><th></th></tr></thead>
+          <tbody>
+            @for (t of data.taxGroups; track t.id) {
+              <tr><td class="desc-cell">{{ t.name }}</td><td><span class="type-badge">{{ t.type }}</span></td>
+                <td class="price-cell">{{ t.rate }}{{ t.type === 'Percentage' ? '%' : ' fixed' }}</td>
+                <td class="actions-cell"><button class="action-icon delete" (click)="removeTaxGroup(t.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></td>
+              </tr>
+            }
+            @if (!data.taxGroups.length) { <tr><td colspan="4" class="empty-row">No tax groups defined</td></tr> }
+          </tbody>
+        </table></div>
+      </div>
+    }
+
+    <!-- PRICE LISTS -->
+    @if (activeTab() === 'price-lists') {
+      <div class="tab-section">
+        <div class="tab-section-header"><h3>Price Lists</h3><p class="tab-desc">Prices per pricing tier with effective dates.</p></div>
+        <div class="add-row-form">
+          <select class="input" [ngModel]="newPriceEntry().pricingId" (ngModelChange)="newPriceEntry.update(f=>({...f,pricingId:+$event}))">
+            @for (p of config.pricings(); track p.id) { <option [value]="p.id">{{ p.shortDescription }}</option> }
+          </select>
+          <input class="input" type="number" min="0" placeholder="Price *" [ngModel]="newPriceEntry().price" (ngModelChange)="newPriceEntry.update(f=>({...f,price:+$event}))">
+          <input class="input" type="date" [ngModel]="newPriceEntry().effectiveFrom" (ngModelChange)="newPriceEntry.update(f=>({...f,effectiveFrom:$event}))">
+          <label class="check-label"><input type="checkbox" [ngModel]="newPriceEntry().taxIncluded" (ngModelChange)="newPriceEntry.update(f=>({...f,taxIncluded:$event}))"> Tax Included</label>
+          <button class="btn-primary" (click)="addPriceEntry()">Add Price</button>
+        </div>
+        <div class="cfg-card"><table class="cfg-table">
+          <thead><tr><th>Tier</th><th>Price</th><th>Tax</th><th>From</th><th></th></tr></thead>
+          <tbody>
+            @for (p of data.priceLists; track p.id) {
+              <tr><td><span class="category-badge">{{ p.pricingName }}</span></td>
+                <td class="price-cell">${{ p.price }}</td>
+                <td>{{ p.taxIncluded ? 'Included' : 'Added on top' }}</td>
+                <td>{{ p.effectiveFrom }}</td>
+                <td class="actions-cell"><button class="action-icon delete" (click)="removePriceEntry(p.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></td>
+              </tr>
+            }
+            @if (!data.priceLists.length) { <tr><td colspan="5" class="empty-row">No prices defined</td></tr> }
+          </tbody>
+        </table></div>
+
+        <div class="subsection-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Price Change History
+        </div>
+        <div class="cfg-card"><table class="cfg-table">
+          <thead><tr><th>Tier</th><th>Old Price</th><th>New Price</th><th>Change</th><th>By</th><th>Date</th></tr></thead>
+          <tbody>
+            @for (h of data.priceHistory; track h.id) {
+              <tr><td><span class="category-badge">{{ h.pricingName }}</span></td>
+                <td class="muted">${{ h.oldPrice }}</td><td class="price-cell">${{ h.newPrice }}</td>
+                <td>@if (h.newPrice > h.oldPrice) { <span class="change-up">▲ +${{ h.newPrice - h.oldPrice }}</span> } @else { <span class="change-down">▼ -${{ h.oldPrice - h.newPrice }}</span> }</td>
+                <td>{{ h.changedBy }}</td><td class="muted">{{ h.changedAt }}</td>
+              </tr>
+            }
+            @if (!data.priceHistory.length) { <tr><td colspan="6" class="empty-row">No history</td></tr> }
+          </tbody>
+        </table></div>
+      </div>
+    }
+
+    <!-- AUDIT LOG -->
+    @if (activeTab() === 'audit') {
+      <div class="tab-section">
+        <div class="tab-section-header"><h3>Audit Log</h3><p class="tab-desc">All changes made to this service.</p></div>
+        <div class="audit-stats">
+          <div class="audit-stat"><span class="audit-stat-val">{{ data.auditLog.length }}</span><span class="audit-stat-lbl">Total Changes</span></div>
+          <div class="audit-stat"><span class="audit-stat-val">{{ data.auditLog.filter(a => a.action === 'Updated').length }}</span><span class="audit-stat-lbl">Updates</span></div>
+        </div>
+        <div class="cfg-card"><table class="cfg-table">
+          <thead><tr><th>Action</th><th>Detail</th><th>By</th><th>Date & Time</th></tr></thead>
+          <tbody>
+            @for (a of data.auditLog; track a.id) {
+              <tr>
+                <td><span class="audit-action" [class.created]="a.action==='Created'" [class.updated]="a.action==='Updated'" [class.deleted]="a.action.includes('Removed')">{{ a.action }}</span></td>
+                <td class="desc-cell">{{ a.field }}</td><td>{{ a.changedBy }}</td><td class="muted">{{ a.changedAt }}</td>
+              </tr>
+            }
+            @if (!data.auditLog.length) { <tr><td colspan="4" class="empty-row">No audit entries</td></tr> }
+          </tbody>
+        </table></div>
+      </div>
+    }
+
+  </div>
+</div>
+}

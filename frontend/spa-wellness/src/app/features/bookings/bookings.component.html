@@ -24,6 +24,7 @@
       <div class="calendar-nav">
         <button class="nav-arrow" (click)="navigate(-1)">‹</button>
         <button class="nav-arrow" (click)="navigate(1)">›</button>
+        <button class="today-btn" (click)="goToToday()">Today</button>
         <span class="calendar-title">{{ getCalendarTitle() }}</span>
       </div>
       <div class="calendar-controls">
@@ -87,10 +88,20 @@
             <div class="calendar-row">
               <div class="time-label">{{ time }}</div>
               @for (day of weekDays(); track day.getTime()) {
-                <div class="calendar-cell" [class.today-col]="isToday(day)">
+                <div class="calendar-cell"
+                     [class.today-col]="isToday(day)"
+                     [class.drag-over]="isDragOver(weekCellKey(day, time))"
+                     (dragover)="onDragOver($event, weekCellKey(day, time))"
+                     (dragleave)="onDragLeave(weekCellKey(day, time))"
+                     (drop)="onDropWeek($event, day, time)">
                   @for (booking of getBookingsForSlot(day, time); track booking.id) {
                     <div class="booking-chip"
                          [style.background]="getBlockBg(booking.status)"
+                         [style.--span]="getBookingSpanRows(booking)"
+                         [class.is-dragging]="isDragging(booking.id)"
+                         draggable="true"
+                         (dragstart)="onDragStart($event, booking)"
+                         (dragend)="onDragEnd()"
                          (click)="openPopup($event, booking)">
                       <span class="chip-name">{{ booking.customerName }}</span>
                       <span class="chip-svc">{{ booking.services[0].serviceName }}</span>
@@ -127,12 +138,21 @@
             <div class="day-row" [style.grid-template-columns]="'64px repeat(' + therapists().length + ', 1fr)'">
               <div class="time-label-day">{{ time }}</div>
               @for (therapist of therapists(); track therapist.id) {
-                <div class="day-cell" [class.off-hours]="!isTherapistWorkingAt(therapist, time)">
+                <div class="day-cell"
+                     [class.off-hours]="!isTherapistWorkingAt(therapist, time)"
+                     [class.drag-over]="isDragOver(dayCellKey(therapist.id, time))"
+                     (dragover)="onDragOver($event, dayCellKey(therapist.id, time))"
+                     (dragleave)="onDragLeave(dayCellKey(therapist.id, time))"
+                     (drop)="onDropDay($event, therapist.id, time)">
                   @for (booking of getBookingsForTherapistSlot(therapist.id, time); track booking.id) {
                     @if (isBookingSlotStart(booking, time)) {
                       <div class="day-booking-block"
                            [style.background]="getBlockBg(booking.status)"
                            [style.--span]="getBookingSpanRows(booking)"
+                           [class.is-dragging]="isDragging(booking.id)"
+                           draggable="true"
+                           (dragstart)="onDragStart($event, booking)"
+                           (dragend)="onDragEnd()"
                            (click)="openPopup($event, booking)">
                         <span class="block-time">{{ booking.startTime }} – {{ booking.endTime }}</span>
                         <span class="block-name">{{ booking.customerName }}</span>

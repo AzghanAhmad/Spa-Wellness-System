@@ -1,18 +1,44 @@
-﻿import { Component, signal, computed } from '@angular/core';
+﻿import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { QuestionnaireService } from './questionnaire.service';
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 export interface Area { id: number; code: string; description: string; maxCapacity: number; forGroup: boolean; sharedByEmployee: boolean; active: boolean; order: number; availableOnline: boolean; groupId?: number; }
 export interface AreaGroup { id: number; description: string; }
 export interface Package { id: number; code: string; shortDescription: string; longDescription: string; category: string; durationType: string; duration: number; services: number; active: boolean; }
 export interface ServiceGroup { id: number; code: string; description: string; active: boolean; order: number; }
-export interface Service { id: number; code: string; name: string; description: string; groupId: number; groupName: string; duration: number; price: number; status: string; type: string; barcode: string; active: boolean; availableOnline: boolean; }
+export interface Service { id: number; code: string; name: string; shortDescription: string; longDescription: string; onlineShortDescription: string; onlineLongDescription: string; description: string; groupId: number; groupName: string; duration: number; downTime: number; price: number; status: string; onlineStatus: string; type: string; barcode: string; active: boolean; availableOnline: boolean; imageUrl: string; includedInPackage: boolean; pricingId?: number; }
 export interface ProductGroup { id: number; code: string; description: string; active: boolean; }
-export interface Product { id: number; code: string; name: string; description: string; groupId: number; groupName: string; price: number; status: string; barcode: string; active: boolean; }
-export interface Supplier { id: number; code: string; name: string; contactPerson: string; email: string; phone: string; address: string; active: boolean; }
+export interface Product { id: number; code: string; name: string; shortDescription: string; longDescription: string; description: string; groupId: number; groupName: string; price: number; status: string; barcode: string; active: boolean; availableOnline: boolean; imageUrl: string; pricingId?: number; }
 
-export type SubPage = 'areas' | 'area-groups' | 'packages' | 'service-groups' | 'services' | 'product-groups' | 'products' | 'suppliers';
+export type QuestionType = 'text' | 'textarea' | 'radio' | 'checkbox' | 'select' | 'number' | 'date' | 'yesno';
+export interface QuestionOption { id: number; label: string; }
+export interface Question { id: number; label: string; type: QuestionType; required: boolean; options: QuestionOption[]; placeholder: string; order: number; }
+export interface QuestionGroup { id: number; title: string; type: 'Profile' | 'Question'; order: number; questions: Question[]; }
+export interface Questionnaire {
+  id: number; referenceToken: string; description: string; status: 'Active' | 'Inactive' | 'Draft';
+  updateCustomerInfo: boolean; activeFrom: string; activeTo: string; answersValidDays: number;
+  groups: QuestionGroup[];
+}
+export interface Supplier { id: number; code: string; name: string; contactPerson: string; email: string; phone: string; address: string; active: boolean; }
+export interface Pricing { id: number; code: string; shortDescription: string; longDescription: string; category: string; active: boolean; availableOnline: boolean; }
+
+export type MembershipTier = 'basic' | 'premium' | 'vip' | 'corporate';
+export type BillingCycle = 'monthly' | 'quarterly' | 'annual' | 'lifetime';
+export interface MembershipBenefit { id: number; description: string; }
+export interface MembershipPlanConfig {
+  id: number; code: string; name: string; tier: MembershipTier;
+  price: number; billingCycle: BillingCycle; duration: number; durationUnit: 'days' | 'months' | 'years';
+  discountPercentage: number; freeServicesPerMonth: number; priorityBooking: boolean;
+  onlineSignup: boolean; accessCardEnabled: boolean; accessCardType: string;
+  autoRenew: boolean; trialDays: number; maxMembers: number;
+  benefits: MembershipBenefit[]; status: 'Active' | 'Inactive' | 'Draft';
+  renewalCount: number; activeMembers: number; createdAt: string;
+}
+
+export type SubPage = 'areas' | 'area-groups' | 'packages' | 'service-groups' | 'services' | 'product-groups' | 'products' | 'suppliers' | 'pricings' | 'questionnaires' | 'memberships';
 
 @Component({
   selector: 'app-configuration',
@@ -21,18 +47,21 @@ export type SubPage = 'areas' | 'area-groups' | 'packages' | 'service-groups' | 
   templateUrl: './configuration.component.html',
   styleUrl: './configuration.component.scss'
 })
-export class ConfigurationComponent {
+export class ConfigurationComponent implements OnInit {
   activePage = signal<SubPage>('areas');
 
   readonly subNavItems: { page: SubPage; label: string; icon: string }[] = [
     { page: 'areas', label: 'Areas', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' },
     { page: 'area-groups', label: 'Area Groups', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M3 14h18"/><circle cx="12" cy="19" r="2"/></svg>' },
     { page: 'packages', label: 'Packages', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
-    { page: 'service-groups', label: 'Service Groups', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' },
     { page: 'services', label: 'Services', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
-    { page: 'product-groups', label: 'Product Groups', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' },
+    { page: 'service-groups', label: 'Service Groups', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' },
     { page: 'products', label: 'Products', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>' },
+    { page: 'product-groups', label: 'Product Groups', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' },
     { page: 'suppliers', label: 'Suppliers', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
+    { page: 'questionnaires', label: 'Questionnaires', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="1"/><circle cx="14" cy="13" r="1"/><path d="M10 17s1 1 4 0"/></svg>' },
+    { page: 'memberships', label: 'Memberships', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><path d="M7 15h.01M11 15h2"/></svg>' },
+    { page: 'pricings', label: 'Pricings', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' },
   ];
 
   // ─── Data ─────────────────────────────────────────────────────────────────
@@ -74,18 +103,18 @@ export class ConfigurationComponent {
   ]);
 
   services = signal<Service[]>([
-    { id: 1, code: 'SWE60', name: 'Swedish Massage', description: 'A gentle full-body massage', groupId: 1, groupName: 'Massage Therapies', duration: 60, price: 120, status: 'Active', type: 'Therapy', barcode: '8901234560001', active: true, availableOnline: true },
-    { id: 2, code: 'DTP75', name: 'Deep Tissue Massage', description: 'Targets deep muscle layers', groupId: 1, groupName: 'Massage Therapies', duration: 75, price: 150, status: 'Active', type: 'Therapy', barcode: '8901234560002', active: true, availableOnline: true },
-    { id: 3, code: 'HST90', name: 'Hot Stone Therapy', description: 'Heated stones for tension relief', groupId: 1, groupName: 'Massage Therapies', duration: 90, price: 180, status: 'Active', type: 'Therapy', barcode: '8901234560003', active: true, availableOnline: true },
-    { id: 4, code: 'ARO60', name: 'Aromatherapy Massage', description: 'Essential oil massage', groupId: 1, groupName: 'Massage Therapies', duration: 60, price: 135, status: 'Active', type: 'Therapy', barcode: '8901234560004', active: true, availableOnline: true },
-    { id: 5, code: 'HYD45', name: 'Hydrating Facial', description: 'Deep moisturizing facial', groupId: 2, groupName: 'Facial Treatments', duration: 45, price: 95, status: 'Active', type: 'Treatment', barcode: '8901234560005', active: true, availableOnline: true },
-    { id: 6, code: 'AAF60', name: 'Anti-Aging Facial', description: 'Reduces fine lines', groupId: 2, groupName: 'Facial Treatments', duration: 60, price: 145, status: 'Active', type: 'Treatment', barcode: '8901234560006', active: true, availableOnline: true },
-    { id: 7, code: 'BWR75', name: 'Body Wrap', description: 'Detoxifying body wrap', groupId: 3, groupName: 'Body Treatments', duration: 75, price: 160, status: 'Active', type: 'Treatment', barcode: '8901234560007', active: true, availableOnline: false },
-    { id: 8, code: 'SSE45', name: 'Salt Scrub Exfoliation', description: 'Full-body exfoliation', groupId: 3, groupName: 'Body Treatments', duration: 45, price: 85, status: 'Active', type: 'Treatment', barcode: '8901234560008', active: true, availableOnline: true },
-    { id: 9, code: 'GEL45', name: 'Gel Manicure', description: 'Long-lasting gel manicure', groupId: 4, groupName: 'Nail Services', duration: 45, price: 55, status: 'Active', type: 'Beauty', barcode: '8901234560009', active: true, availableOnline: true },
-    { id: 10, code: 'LUX60', name: 'Luxury Pedicure', description: 'Full pedicure treatment', groupId: 4, groupName: 'Nail Services', duration: 60, price: 75, status: 'Active', type: 'Beauty', barcode: '8901234560010', active: true, availableOnline: true },
-    { id: 11, code: 'HST60', name: 'Hair Styling', description: 'Wash, cut and blow dry', groupId: 5, groupName: 'Hair Services', duration: 60, price: 90, status: 'Active', type: 'Beauty', barcode: '8901234560011', active: true, availableOnline: false },
-    { id: 12, code: 'WPK180', name: 'Wellness Package', description: 'Complete day package', groupId: 6, groupName: 'Wellness Packages', duration: 180, price: 350, status: 'Active', type: 'Package', barcode: '8901234560012', active: true, availableOnline: true },
+    { id: 1, code: 'SWE60', name: 'Swedish Massage', shortDescription: 'A gentle full-body massage', longDescription: 'A classic full-body massage using long, flowing strokes to relax muscles and improve circulation.', onlineShortDescription: 'Relax with our signature Swedish Massage', onlineLongDescription: 'Experience the ultimate relaxation with our 60-minute Swedish Massage, designed to melt away tension.', description: 'A gentle full-body massage', groupId: 1, groupName: 'Massage Therapies', duration: 60, downTime: 10, price: 120, status: 'Active', onlineStatus: 'Online', type: 'Therapy', barcode: '8901234560001', active: true, availableOnline: true, imageUrl: '', includedInPackage: true, pricingId: 1 },
+    { id: 2, code: 'DTP75', name: 'Deep Tissue Massage', shortDescription: 'Targets deep muscle layers', longDescription: 'Intense massage targeting deep layers of muscle tissue for chronic pain relief.', onlineShortDescription: 'Deep relief for chronic tension', onlineLongDescription: 'Our Deep Tissue Massage reaches the deeper layers of muscle to release chronic tension and pain.', description: 'Targets deep muscle layers', groupId: 1, groupName: 'Massage Therapies', duration: 75, downTime: 10, price: 150, status: 'Active', onlineStatus: 'Online', type: 'Therapy', barcode: '8901234560002', active: true, availableOnline: true, imageUrl: '', includedInPackage: true, pricingId: 1 },
+    { id: 3, code: 'HST90', name: 'Hot Stone Therapy', shortDescription: 'Heated stones for tension relief', longDescription: 'Heated basalt stones placed on key points to ease tension and improve energy flow.', onlineShortDescription: 'Melt away stress with heated stones', onlineLongDescription: 'Warm volcanic stones combined with massage techniques to deeply relax muscles and restore balance.', description: 'Heated stones for tension relief', groupId: 1, groupName: 'Massage Therapies', duration: 90, downTime: 15, price: 180, status: 'Active', onlineStatus: 'Online', type: 'Therapy', barcode: '8901234560003', active: true, availableOnline: true, imageUrl: '', includedInPackage: true, pricingId: 2 },
+    { id: 4, code: 'ARO60', name: 'Aromatherapy Massage', shortDescription: 'Essential oil massage', longDescription: 'Essential oil-infused massage to promote relaxation and well-being.', onlineShortDescription: 'Soothe your senses with aromatherapy', onlineLongDescription: 'A blissful combination of therapeutic massage and carefully selected essential oils.', description: 'Essential oil massage', groupId: 1, groupName: 'Massage Therapies', duration: 60, downTime: 10, price: 135, status: 'Active', onlineStatus: 'Online', type: 'Therapy', barcode: '8901234560004', active: true, availableOnline: true, imageUrl: '', includedInPackage: false, pricingId: 1 },
+    { id: 5, code: 'HYD45', name: 'Hydrating Facial', shortDescription: 'Deep moisturizing facial', longDescription: 'Deep moisturizing facial treatment for dry and dehydrated skin.', onlineShortDescription: 'Restore your skin\'s natural glow', onlineLongDescription: 'Our Hydrating Facial uses premium serums and masks to deeply nourish and revitalize your skin.', description: 'Deep moisturizing facial', groupId: 2, groupName: 'Facial Treatments', duration: 45, downTime: 5, price: 95, status: 'Active', onlineStatus: 'Online', type: 'Treatment', barcode: '8901234560005', active: true, availableOnline: true, imageUrl: '', includedInPackage: true, pricingId: 1 },
+    { id: 6, code: 'AAF60', name: 'Anti-Aging Facial', shortDescription: 'Reduces fine lines', longDescription: 'Advanced facial treatment to reduce fine lines and improve skin elasticity.', onlineShortDescription: 'Turn back the clock with our anti-aging facial', onlineLongDescription: 'A powerful anti-aging treatment combining advanced techniques to visibly reduce fine lines.', description: 'Reduces fine lines', groupId: 2, groupName: 'Facial Treatments', duration: 60, downTime: 5, price: 145, status: 'Active', onlineStatus: 'Online', type: 'Treatment', barcode: '8901234560006', active: true, availableOnline: true, imageUrl: '', includedInPackage: false, pricingId: 2 },
+    { id: 7, code: 'BWR75', name: 'Body Wrap', shortDescription: 'Detoxifying body wrap', longDescription: 'Detoxifying body wrap using natural minerals and herbs.', onlineShortDescription: 'Detox and renew with our body wrap', onlineLongDescription: 'A luxurious full-body wrap that draws out impurities and leaves skin silky smooth.', description: 'Detoxifying body wrap', groupId: 3, groupName: 'Body Treatments', duration: 75, downTime: 15, price: 160, status: 'Active', onlineStatus: 'Offline', type: 'Treatment', barcode: '8901234560007', active: true, availableOnline: false, imageUrl: '', includedInPackage: true, pricingId: 1 },
+    { id: 8, code: 'SSE45', name: 'Salt Scrub Exfoliation', shortDescription: 'Full-body exfoliation', longDescription: 'Full-body exfoliation with mineral-rich sea salt to reveal glowing skin.', onlineShortDescription: 'Reveal radiant skin with salt scrub', onlineLongDescription: 'Our invigorating salt scrub removes dead skin cells and stimulates circulation for a healthy glow.', description: 'Full-body exfoliation', groupId: 3, groupName: 'Body Treatments', duration: 45, downTime: 10, price: 85, status: 'Active', onlineStatus: 'Online', type: 'Treatment', barcode: '8901234560008', active: true, availableOnline: true, imageUrl: '', includedInPackage: true, pricingId: 1 },
+    { id: 9, code: 'GEL45', name: 'Gel Manicure', shortDescription: 'Long-lasting gel manicure', longDescription: 'Long-lasting gel manicure with cuticle care and hand massage.', onlineShortDescription: 'Perfect nails that last', onlineLongDescription: 'Our gel manicure provides a flawless, chip-resistant finish that lasts up to 3 weeks.', description: 'Long-lasting gel manicure', groupId: 4, groupName: 'Nail Services', duration: 45, downTime: 5, price: 55, status: 'Active', onlineStatus: 'Online', type: 'Beauty', barcode: '8901234560009', active: true, availableOnline: true, imageUrl: '', includedInPackage: false, pricingId: 1 },
+    { id: 10, code: 'LUX60', name: 'Luxury Pedicure', shortDescription: 'Full pedicure treatment', longDescription: 'Full pedicure with foot soak, exfoliation, and massage.', onlineShortDescription: 'Pamper your feet with luxury', onlineLongDescription: 'A complete pedicure experience including soak, scrub, massage, and polish for perfectly groomed feet.', description: 'Full pedicure treatment', groupId: 4, groupName: 'Nail Services', duration: 60, downTime: 5, price: 75, status: 'Active', onlineStatus: 'Online', type: 'Beauty', barcode: '8901234560010', active: true, availableOnline: true, imageUrl: '', includedInPackage: false, pricingId: 1 },
+    { id: 11, code: 'HST60', name: 'Hair Styling', shortDescription: 'Wash, cut and blow dry', longDescription: 'Professional hair styling including wash, cut, and blow dry.', onlineShortDescription: 'Transform your look', onlineLongDescription: 'Our expert stylists will create the perfect look for you with a wash, cut, and professional blow dry.', description: 'Wash, cut and blow dry', groupId: 5, groupName: 'Hair Services', duration: 60, downTime: 10, price: 90, status: 'Active', onlineStatus: 'Offline', type: 'Beauty', barcode: '8901234560011', active: true, availableOnline: false, imageUrl: '', includedInPackage: false, pricingId: 1 },
+    { id: 12, code: 'WPK180', name: 'Wellness Package', shortDescription: 'Complete day package', longDescription: 'Complete day package: massage, facial, and body treatment.', onlineShortDescription: 'The ultimate wellness day', onlineLongDescription: 'Indulge in a full day of pampering with our signature wellness package including massage, facial, and body treatment.', description: 'Complete day package', groupId: 6, groupName: 'Wellness Packages', duration: 180, downTime: 20, price: 350, status: 'Active', onlineStatus: 'Online', type: 'Package', barcode: '8901234560012', active: true, availableOnline: true, imageUrl: '', includedInPackage: false, pricingId: 2 },
   ]);
 
   productGroups = signal<ProductGroup[]>([
@@ -97,14 +126,23 @@ export class ConfigurationComponent {
   ]);
 
   products = signal<Product[]>([
-    { id: 1, code: 'SKN001', name: 'Hydrating Face Cream', description: 'Deep moisturizing cream for all skin types', groupId: 1, groupName: 'Skincare', price: 45, status: 'Active', barcode: '8100469863630', active: true },
-    { id: 2, code: 'SKN002', name: 'Anti-Aging Serum', description: 'Reduces fine lines and wrinkles', groupId: 1, groupName: 'Skincare', price: 85, status: 'Active', barcode: '8100469863631', active: true },
-    { id: 3, code: 'ARO001', name: 'Lavender Essential Oil', description: 'Pure lavender oil for relaxation', groupId: 2, groupName: 'Aromatherapy', price: 28, status: 'Active', barcode: '8100469863632', active: true },
-    { id: 4, code: 'ARO002', name: 'Eucalyptus Oil', description: 'Refreshing eucalyptus essential oil', groupId: 2, groupName: 'Aromatherapy', price: 24, status: 'Active', barcode: '8100469863633', active: true },
-    { id: 5, code: 'HAR001', name: 'Nourishing Hair Mask', description: 'Deep conditioning hair treatment', groupId: 3, groupName: 'Hair Care', price: 32, status: 'Active', barcode: '8100469863634', active: true },
-    { id: 6, code: 'SLP001', name: 'Sleep Pillow Mist', description: 'Calming mist for better sleep', groupId: 4, groupName: 'Sleep & Wellness', price: 22, status: 'Active', barcode: '8100469863635', active: true },
-    { id: 7, code: 'NAL001', name: 'Cuticle Oil', description: 'Nourishing cuticle treatment oil', groupId: 5, groupName: 'Nail Care', price: 15, status: 'Active', barcode: '8100469863636', active: true },
-    { id: 8, code: 'SKN003', name: 'Body Scrub', description: 'Exfoliating sea salt body scrub', groupId: 1, groupName: 'Skincare', price: 38, status: 'Active', barcode: '8100469863637', active: true },
+    { id: 1, code: 'SKN001', name: 'Hydrating Face Cream', shortDescription: 'Deep moisturizing cream', longDescription: 'Deep moisturizing cream for all skin types, enriched with hyaluronic acid.', description: 'Deep moisturizing cream for all skin types', groupId: 1, groupName: 'Skincare', price: 45, status: 'Active', barcode: '8100469863630', active: true, availableOnline: true, imageUrl: '', pricingId: 1 },
+    { id: 2, code: 'SKN002', name: 'Anti-Aging Serum', shortDescription: 'Reduces fine lines', longDescription: 'Advanced serum that reduces fine lines and wrinkles with retinol complex.', description: 'Reduces fine lines and wrinkles', groupId: 1, groupName: 'Skincare', price: 85, status: 'Active', barcode: '8100469863631', active: true, availableOnline: true, imageUrl: '', pricingId: 1 },
+    { id: 3, code: 'ARO001', name: 'Lavender Essential Oil', shortDescription: 'Pure lavender oil', longDescription: 'Pure therapeutic-grade lavender essential oil for relaxation and sleep.', description: 'Pure lavender oil for relaxation', groupId: 2, groupName: 'Aromatherapy', price: 28, status: 'Active', barcode: '8100469863632', active: true, availableOnline: true, imageUrl: '', pricingId: 1 },
+    { id: 4, code: 'ARO002', name: 'Eucalyptus Oil', shortDescription: 'Refreshing eucalyptus oil', longDescription: 'Refreshing eucalyptus essential oil for respiratory wellness and invigoration.', description: 'Refreshing eucalyptus essential oil', groupId: 2, groupName: 'Aromatherapy', price: 24, status: 'Active', barcode: '8100469863633', active: true, availableOnline: false, imageUrl: '', pricingId: 1 },
+    { id: 5, code: 'HAR001', name: 'Nourishing Hair Mask', shortDescription: 'Deep conditioning mask', longDescription: 'Intensive deep conditioning hair treatment with argan oil and keratin.', description: 'Deep conditioning hair treatment', groupId: 3, groupName: 'Hair Care', price: 32, status: 'Active', barcode: '8100469863634', active: true, availableOnline: true, imageUrl: '', pricingId: 2 },
+    { id: 6, code: 'SLP001', name: 'Sleep Pillow Mist', shortDescription: 'Calming sleep mist', longDescription: 'Calming lavender and chamomile mist for better sleep quality.', description: 'Calming mist for better sleep', groupId: 4, groupName: 'Sleep & Wellness', price: 22, status: 'Active', barcode: '8100469863635', active: true, availableOnline: true, imageUrl: '', pricingId: 1 },
+    { id: 7, code: 'NAL001', name: 'Cuticle Oil', shortDescription: 'Nourishing cuticle oil', longDescription: 'Vitamin E enriched cuticle oil for healthy, hydrated nails and cuticles.', description: 'Nourishing cuticle treatment oil', groupId: 5, groupName: 'Nail Care', price: 15, status: 'Active', barcode: '8100469863636', active: true, availableOnline: true, imageUrl: '', pricingId: 1 },
+    { id: 8, code: 'SKN003', name: 'Body Scrub', shortDescription: 'Exfoliating sea salt scrub', longDescription: 'Mineral-rich sea salt body scrub with coconut oil for silky smooth skin.', description: 'Exfoliating sea salt body scrub', groupId: 1, groupName: 'Skincare', price: 38, status: 'Active', barcode: '8100469863637', active: true, availableOnline: false, imageUrl: '', pricingId: 1 },
+  ]);
+
+  pricings = signal<Pricing[]>([
+    { id: 1, code: 'OFF', shortDescription: 'Official', longDescription: 'Official standard pricing for all services and products', category: 'Normal', active: true, availableOnline: true },
+    { id: 2, code: 'MSN', shortDescription: 'Maison', longDescription: 'Maison premium pricing tier for VIP clients', category: 'Maison', active: true, availableOnline: false },
+    { id: 3, code: 'MBR', shortDescription: 'Member Rate', longDescription: 'Discounted pricing for active membership holders', category: 'Membership', active: true, availableOnline: true },
+    { id: 4, code: 'RMC', shortDescription: 'Room Charge', longDescription: 'Pricing for services charged directly to hotel room', category: 'Room Charge', active: true, availableOnline: false },
+    { id: 5, code: 'CRD', shortDescription: 'Credit Card', longDescription: 'Standard credit card payment pricing', category: 'Credit Card', active: true, availableOnline: true },
+    { id: 6, code: 'CSH', shortDescription: 'Cash', longDescription: 'Cash payment pricing', category: 'Cash', active: true, availableOnline: false },
   ]);
 
   suppliers = signal<Supplier[]>([
@@ -115,7 +153,49 @@ export class ConfigurationComponent {
     { id: 5, code: 'SUP005', name: 'Organic Spa Imports', contactPerson: 'Emma Wilson', email: 'emma@organicspa.com', phone: '+1-555-0405', address: '33 Natural Way, Seattle, WA 98101', active: true },
   ]);
 
-  // ─── Pagination & Search ──────────────────────────────────────────────────
+  membershipPlans = signal<MembershipPlanConfig[]>([
+    { id: 1, code: 'ESS', name: 'Essentials', tier: 'basic', price: 49, billingCycle: 'monthly', duration: 1, durationUnit: 'months', discountPercentage: 10, freeServicesPerMonth: 1, priorityBooking: false, onlineSignup: true, accessCardEnabled: true, accessCardType: 'RFID', autoRenew: true, trialDays: 7, maxMembers: 0, benefits: [{ id: 1, description: '10% off all services' }, { id: 2, description: '1 free service/month' }, { id: 3, description: 'Birthday discount' }], status: 'Active', renewalCount: 48, activeMembers: 124, createdAt: '2023-01-01' },
+    { id: 2, code: 'PRE', name: 'Premium Bliss', tier: 'premium', price: 99, billingCycle: 'monthly', duration: 1, durationUnit: 'months', discountPercentage: 20, freeServicesPerMonth: 3, priorityBooking: true, onlineSignup: true, accessCardEnabled: true, accessCardType: 'NFC', autoRenew: true, trialDays: 14, maxMembers: 0, benefits: [{ id: 1, description: '20% off all services' }, { id: 2, description: '3 free services/month' }, { id: 3, description: 'Priority booking' }, { id: 4, description: 'Free product samples' }], status: 'Active', renewalCount: 112, activeMembers: 87, createdAt: '2023-01-01' },
+    { id: 3, code: 'VIP', name: 'VIP Serenity', tier: 'vip', price: 199, billingCycle: 'monthly', duration: 1, durationUnit: 'months', discountPercentage: 30, freeServicesPerMonth: 99, priorityBooking: true, onlineSignup: false, accessCardEnabled: true, accessCardType: 'Smart Card', autoRenew: true, trialDays: 0, maxMembers: 50, benefits: [{ id: 1, description: '30% off all services' }, { id: 2, description: 'Unlimited services' }, { id: 3, description: 'VIP priority booking' }, { id: 4, description: 'Quarterly free products' }, { id: 5, description: 'Exclusive events access' }], status: 'Active', renewalCount: 34, activeMembers: 23, createdAt: '2023-06-01' },
+    { id: 4, code: 'CRP', name: 'Corporate Wellness', tier: 'corporate', price: 499, billingCycle: 'annual', duration: 1, durationUnit: 'years', discountPercentage: 25, freeServicesPerMonth: 10, priorityBooking: true, onlineSignup: false, accessCardEnabled: true, accessCardType: 'RFID', autoRenew: false, trialDays: 30, maxMembers: 20, benefits: [{ id: 1, description: '25% off all services' }, { id: 2, description: '10 services/month per member' }, { id: 3, description: 'Dedicated account manager' }, { id: 4, description: 'Monthly wellness reports' }], status: 'Active', renewalCount: 8, activeMembers: 15, createdAt: '2024-01-01' },
+  ]);
+
+  membershipForm = signal<Partial<MembershipPlanConfig>>({});
+  newBenefit = signal('');
+
+  readonly tierOptions: MembershipTier[] = ['basic', 'premium', 'vip', 'corporate'];
+  readonly billingCycleOptions: BillingCycle[] = ['monthly', 'quarterly', 'annual', 'lifetime'];
+  readonly accessCardTypes = ['RFID', 'NFC', 'Smart Card', 'Barcode', 'QR Code', 'None'];
+
+  filteredMemberships = computed(() => {
+    const q = this.searchTerm().toLowerCase();
+    return this.membershipPlans().filter(m => !q || m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q) || m.tier.includes(q));
+  });
+  paginatedMemberships = computed(() => this.paginate(this.filteredMemberships()));
+
+  addBenefit(): void {
+    const label = this.newBenefit().trim(); if (!label) return;
+    const benefits = this.membershipForm().benefits ?? [];
+    const newId = Math.max(0, ...benefits.map(b => b.id)) + 1;
+    this.membershipForm.update(f => ({ ...f, benefits: [...(f.benefits ?? []), { id: newId, description: label }] }));
+    this.newBenefit.set('');
+  }
+
+  removeBenefit(id: number): void {
+    this.membershipForm.update(f => ({ ...f, benefits: (f.benefits ?? []).filter(b => b.id !== id) }));
+  }
+
+  tierColor(tier: MembershipTier): string {
+    const map: Record<MembershipTier, string> = { basic: '#6b7280', premium: '#3b82f6', vip: '#8b5cf6', corporate: '#f59e0b' };
+    return map[tier];
+  }
+
+  constructor(private readonly router: Router, private readonly qService: QuestionnaireService, private readonly route: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    const page = this.route.snapshot.queryParamMap.get('page') as SubPage | null;
+    if (page) this.activePage.set(page);
+  }
   pageSize = signal(10);
   currentPage = signal(1);
   readonly pageSizeOptions = [5, 10, 20, 50, 100];
@@ -146,6 +226,8 @@ export class ConfigurationComponent {
   });
   filteredSuppliers = computed(() => { const q = this.searchTerm().toLowerCase(); return this.suppliers().filter(s => !q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.contactPerson.toLowerCase().includes(q)); });
 
+  filteredPricings = computed(() => { const q = this.searchTerm().toLowerCase(); return this.pricings().filter(p => !q || p.shortDescription.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)); });
+
   paginatedAreas = computed(() => this.paginate(this.filteredAreas()));
   paginatedAreaGroups = computed(() => this.paginate(this.filteredAreaGroups()));
   paginatedPackages = computed(() => this.paginate(this.filteredPackages()));
@@ -154,6 +236,7 @@ export class ConfigurationComponent {
   paginatedProductGroups = computed(() => this.paginate(this.filteredProductGroups()));
   paginatedProducts = computed(() => this.paginate(this.filteredProducts()));
   paginatedSuppliers = computed(() => this.paginate(this.filteredSuppliers()));
+  paginatedPricings = computed(() => this.paginate(this.filteredPricings()));
 
   totalItemsForPage = computed(() => {
     switch (this.activePage()) {
@@ -165,6 +248,9 @@ export class ConfigurationComponent {
       case 'product-groups': return this.filteredProductGroups().length;
       case 'products': return this.filteredProducts().length;
       case 'suppliers': return this.filteredSuppliers().length;
+      case 'pricings': return this.filteredPricings().length;
+      case 'questionnaires': return this.filteredQuestionnaires().length;
+      case 'memberships': return this.filteredMemberships().length;
     }
   });
 
@@ -198,6 +284,7 @@ export class ConfigurationComponent {
   productGroupForm = signal<Partial<ProductGroup>>({});
   productForm = signal<Partial<Product>>({});
   supplierForm = signal<Partial<Supplier>>({});
+  pricingForm = signal<Partial<Pricing>>({});
 
   // ─── Navigation ───────────────────────────────────────────────────────────
   setPage(page: SubPage): void {
@@ -217,7 +304,7 @@ export class ConfigurationComponent {
   setPageSize(size: number): void { this.pageSize.set(size); this.currentPage.set(1); }
 
   get pageTitle(): string {
-    const map: Record<SubPage, string> = { 'areas': 'Areas', 'area-groups': 'Area Groups', 'packages': 'Packages', 'service-groups': 'Service Groups', 'services': 'Services', 'product-groups': 'Product Groups', 'products': 'Products', 'suppliers': 'Suppliers' };
+    const map: Record<SubPage, string> = { 'areas': 'Areas', 'area-groups': 'Area Groups', 'packages': 'Packages', 'service-groups': 'Service Groups', 'services': 'Services', 'product-groups': 'Product Groups', 'products': 'Products', 'suppliers': 'Suppliers', 'pricings': 'Pricings', 'questionnaires': 'Questionnaires', 'memberships': 'Membership Plans' };
     return map[this.activePage()];
   }
 
@@ -231,17 +318,22 @@ export class ConfigurationComponent {
   // ─── CRUD ─────────────────────────────────────────────────────────────────
   openAdd(): void { this.modalMode.set('add'); this.editingId.set(null); this.resetForms(); this.showModal.set(true); }
 
-  openEdit(item: Area | AreaGroup | Package | ServiceGroup | Service | ProductGroup | Product | Supplier): void {
+  openEdit(item: Area | AreaGroup | Package | ServiceGroup | Service | ProductGroup | Product | Supplier | Pricing | MembershipPlanConfig): void {
     this.modalMode.set('edit'); this.editingId.set(item.id);
     const p = this.activePage();
     if (p === 'areas') this.areaForm.set({ ...(item as Area) });
     else if (p === 'area-groups') this.areaGroupForm.set({ ...(item as AreaGroup) });
     else if (p === 'packages') this.packageForm.set({ ...(item as Package) });
     else if (p === 'service-groups') this.serviceGroupForm.set({ ...(item as ServiceGroup) });
-    else if (p === 'services') this.serviceForm.set({ ...(item as Service) });
+    else if (p === 'services') {
+      const svc = item as Service;
+      this.serviceForm.set({ ...svc, onlineStatus: svc.availableOnline ? 'Online' : 'Offline' });
+    }
     else if (p === 'product-groups') this.productGroupForm.set({ ...(item as ProductGroup) });
     else if (p === 'products') this.productForm.set({ ...(item as Product) });
     else if (p === 'suppliers') this.supplierForm.set({ ...(item as Supplier) });
+    else if (p === 'pricings') this.pricingForm.set({ ...(item as Pricing) });
+    else if (p === 'memberships') { this.membershipForm.set({ ...(item as unknown as MembershipPlanConfig) }); this.newBenefit.set(''); }
     this.showModal.set(true);
   }
 
@@ -271,7 +363,7 @@ export class ConfigurationComponent {
       const f = this.serviceForm(); if (!f.name) return;
       const grp = this.serviceGroups().find(g => g.id === f.groupId);
       const newId = Math.max(0, ...this.services().map(s => s.id)) + 1;
-      if (mode === 'add') this.services.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('SVC', newId), name: f.name!, description: f.description ?? '', groupId: f.groupId ?? 1, groupName: grp?.description ?? '', duration: f.duration ?? 60, price: f.price ?? 0, status: f.status ?? 'Active', type: f.type ?? 'Therapy', barcode: f.barcode ?? this.autoBarcode(newId), active: f.active ?? true, availableOnline: f.availableOnline ?? true }]);
+      if (mode === 'add') this.services.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('SVC', newId), name: f.name!, shortDescription: f.shortDescription ?? '', longDescription: f.longDescription ?? '', onlineShortDescription: f.onlineShortDescription ?? '', onlineLongDescription: f.onlineLongDescription ?? '', description: f.shortDescription ?? '', groupId: f.groupId ?? 1, groupName: grp?.description ?? '', duration: f.duration ?? 60, downTime: f.downTime ?? 0, price: f.price ?? 0, status: f.status ?? 'Active', onlineStatus: f.onlineStatus ?? 'Offline', type: f.type ?? 'Therapy', barcode: f.barcode ?? this.autoBarcode(newId), active: f.active ?? true, availableOnline: f.availableOnline ?? false, imageUrl: f.imageUrl ?? '', includedInPackage: f.includedInPackage ?? false, pricingId: f.pricingId }]);
       else this.services.update(l => l.map(s => s.id === this.editingId() ? { ...s, ...f, groupName: grp?.description ?? s.groupName } as Service : s));
     } else if (p === 'product-groups') {
       const f = this.productGroupForm(); if (!f.description) return;
@@ -282,13 +374,23 @@ export class ConfigurationComponent {
       const f = this.productForm(); if (!f.name) return;
       const grp = this.productGroups().find(g => g.id === f.groupId);
       const newId = Math.max(0, ...this.products().map(x => x.id)) + 1;
-      if (mode === 'add') this.products.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('PRD', newId), name: f.name!, description: f.description ?? '', groupId: f.groupId ?? 1, groupName: grp?.description ?? '', price: f.price ?? 0, status: f.status ?? 'Active', barcode: f.barcode ?? this.autoBarcode(newId + 100), active: f.active ?? true }]);
+      if (mode === 'add') this.products.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('PRD', newId), name: f.name!, shortDescription: f.shortDescription ?? '', longDescription: f.longDescription ?? '', description: f.description ?? '', groupId: f.groupId ?? 1, groupName: grp?.description ?? '', price: f.price ?? 0, status: f.status ?? 'Active', barcode: f.barcode ?? this.autoBarcode(newId + 100), active: f.active ?? true, availableOnline: f.availableOnline ?? false, imageUrl: f.imageUrl ?? '' }]);
       else this.products.update(l => l.map(x => x.id === this.editingId() ? { ...x, ...f, groupName: grp?.description ?? x.groupName } as Product : x));
     } else if (p === 'suppliers') {
       const f = this.supplierForm(); if (!f.name) return;
       const newId = Math.max(0, ...this.suppliers().map(s => s.id)) + 1;
       if (mode === 'add') this.suppliers.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('SUP', newId), name: f.name!, contactPerson: f.contactPerson ?? '', email: f.email ?? '', phone: f.phone ?? '', address: f.address ?? '', active: f.active ?? true }]);
       else this.suppliers.update(l => l.map(s => s.id === this.editingId() ? { ...s, ...f } as Supplier : s));
+    } else if (p === 'pricings') {
+      const f = this.pricingForm(); if (!f.shortDescription) return;
+      const newId = Math.max(0, ...this.pricings().map(x => x.id)) + 1;
+      if (mode === 'add') this.pricings.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('PRC', newId), shortDescription: f.shortDescription!, longDescription: f.longDescription ?? '', category: f.category ?? 'Normal', active: f.active ?? true, availableOnline: f.availableOnline ?? false }]);
+      else this.pricings.update(l => l.map(x => x.id === this.editingId() ? { ...x, ...f } as Pricing : x));
+    } else if (p === 'memberships') {
+      const f = this.membershipForm(); if (!f.name) return;
+      const newId = Math.max(0, ...this.membershipPlans().map(x => x.id)) + 1;
+      if (mode === 'add') this.membershipPlans.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('MBR', newId), name: f.name!, tier: f.tier ?? 'basic', price: f.price ?? 0, billingCycle: f.billingCycle ?? 'monthly', duration: f.duration ?? 1, durationUnit: f.durationUnit ?? 'months', discountPercentage: f.discountPercentage ?? 0, freeServicesPerMonth: f.freeServicesPerMonth ?? 0, priorityBooking: f.priorityBooking ?? false, onlineSignup: f.onlineSignup ?? true, accessCardEnabled: f.accessCardEnabled ?? false, accessCardType: f.accessCardType ?? 'RFID', autoRenew: f.autoRenew ?? true, trialDays: f.trialDays ?? 0, maxMembers: f.maxMembers ?? 0, benefits: f.benefits ?? [], status: f.status ?? 'Active', renewalCount: 0, activeMembers: 0, createdAt: new Date().toISOString().split('T')[0] }]);
+      else this.membershipPlans.update(l => l.map(x => x.id === this.editingId() ? { ...x, ...f } as MembershipPlanConfig : x));
     }
     this.showModal.set(false);
   }
@@ -304,6 +406,9 @@ export class ConfigurationComponent {
     else if (p === 'product-groups') this.productGroups.update(l => l.filter(g => g.id !== id));
     else if (p === 'products') this.products.update(l => l.filter(x => x.id !== id));
     else if (p === 'suppliers') this.suppliers.update(l => l.filter(s => s.id !== id));
+    else if (p === 'pricings') this.pricings.update(l => l.filter(x => x.id !== id));
+    else if (p === 'questionnaires') this.qService.questionnaires.update(l => l.filter(x => x.id !== id));
+    else if (p === 'memberships') this.membershipPlans.update(l => l.filter(x => x.id !== id));
   }
 
   toggleActive(id: number): void {
@@ -315,6 +420,8 @@ export class ConfigurationComponent {
     else if (p === 'product-groups') this.productGroups.update(l => l.map(g => g.id === id ? { ...g, active: !g.active } : g));
     else if (p === 'products') this.products.update(l => l.map(x => x.id === id ? { ...x, active: !x.active } : x));
     else if (p === 'suppliers') this.suppliers.update(l => l.map(s => s.id === id ? { ...s, active: !s.active } : s));
+    else if (p === 'memberships') this.membershipPlans.update(l => l.map(m => m.id === id ? { ...m, status: m.status === 'Active' ? 'Inactive' : 'Active' } as MembershipPlanConfig : m));
+    else if (p === 'pricings') this.pricings.update(l => l.map(x => x.id === id ? { ...x, active: !x.active } : x));
   }
 
   private resetForms(): void {
@@ -322,10 +429,13 @@ export class ConfigurationComponent {
     this.areaGroupForm.set({});
     this.packageForm.set({ active: true, durationType: 'Years', duration: 1, services: 0, category: 'Combosale Open' });
     this.serviceGroupForm.set({ active: true, order: 1 });
-    this.serviceForm.set({ active: true, availableOnline: true, duration: 60, price: 0, groupId: 1, status: 'Active', type: 'Therapy' });
+    this.serviceForm.set({ active: true, availableOnline: false, duration: 60, downTime: 0, price: 0, groupId: 1, status: 'Active', onlineStatus: 'Offline', type: 'Therapy', includedInPackage: false, shortDescription: '', longDescription: '', onlineShortDescription: '', onlineLongDescription: '' });
     this.productGroupForm.set({ active: true });
-    this.productForm.set({ active: true, price: 0, groupId: 1, status: 'Active' });
+    this.productForm.set({ active: true, price: 0, groupId: 1, status: 'Active', availableOnline: false, imageUrl: '' });
     this.supplierForm.set({ active: true });
+    this.pricingForm.set({ active: true, availableOnline: false, category: 'Normal' });
+    this.membershipForm.set({ status: 'Active', tier: 'basic', billingCycle: 'monthly', price: 0, duration: 1, durationUnit: 'months', discountPercentage: 0, freeServicesPerMonth: 0, priorityBooking: false, onlineSignup: true, accessCardEnabled: false, accessCardType: 'RFID', autoRenew: true, trialDays: 0, maxMembers: 0, benefits: [] });
+    this.newBenefit.set('');
   }
 
   private autoCode(prefix: string, id: number): string { return `${prefix}${String(id).padStart(3, '0')}`; }
@@ -333,8 +443,218 @@ export class ConfigurationComponent {
 
   getAreaGroupName(groupId?: number): string { return this.areaGroups().find(g => g.id === groupId)?.description ?? '—'; }
   getProductGroupName(groupId?: number): string { return this.productGroups().find(g => g.id === groupId)?.description ?? '—'; }
+  getPricingName(pricingId?: number): string { return this.pricings().find(p => p.id === pricingId)?.shortDescription ?? '—'; }
   isNumber(val: number | '...'): val is number { return val !== '...'; }
 
-  readonly serviceTypes = ['Therapy', 'Treatment', 'Beauty', 'Package', 'Consultation', 'Other'];
+  duplicateItem(id: number): void {
+    const p = this.activePage();
+    if (p === 'areas') { const item = this.areas().find(a => a.id === id); if (!item) return; const newId = Math.max(0, ...this.areas().map(a => a.id)) + 1; this.areas.update(l => [...l, { ...item, id: newId, code: item.code + '_COPY', description: item.description + ' (Copy)', order: newId }]); }
+    else if (p === 'area-groups') { const item = this.areaGroups().find(g => g.id === id); if (!item) return; const newId = Math.max(0, ...this.areaGroups().map(g => g.id)) + 1; this.areaGroups.update(l => [...l, { ...item, id: newId, description: item.description + ' (Copy)' }]); }
+    else if (p === 'packages') { const item = this.packages().find(x => x.id === id); if (!item) return; const newId = Math.max(0, ...this.packages().map(x => x.id)) + 1; this.packages.update(l => [...l, { ...item, id: newId, code: item.code + '_C', shortDescription: item.shortDescription + ' (Copy)' }]); }
+    else if (p === 'service-groups') { const item = this.serviceGroups().find(g => g.id === id); if (!item) return; const newId = Math.max(0, ...this.serviceGroups().map(g => g.id)) + 1; this.serviceGroups.update(l => [...l, { ...item, id: newId, code: item.code + '_C', description: item.description + ' (Copy)', order: newId }]); }
+    else if (p === 'services') { const item = this.services().find(s => s.id === id); if (!item) return; const newId = Math.max(0, ...this.services().map(s => s.id)) + 1; this.services.update(l => [...l, { ...item, id: newId, code: this.autoCode('SVC', newId), name: item.name + ' (Copy)', barcode: this.autoBarcode(newId) }]); }
+    else if (p === 'product-groups') { const item = this.productGroups().find(g => g.id === id); if (!item) return; const newId = Math.max(0, ...this.productGroups().map(g => g.id)) + 1; this.productGroups.update(l => [...l, { ...item, id: newId, code: item.code + '_C', description: item.description + ' (Copy)' }]); }
+    else if (p === 'products') { const item = this.products().find(x => x.id === id); if (!item) return; const newId = Math.max(0, ...this.products().map(x => x.id)) + 1; this.products.update(l => [...l, { ...item, id: newId, code: this.autoCode('PRD', newId), name: item.name + ' (Copy)', barcode: this.autoBarcode(newId + 100) }]); }
+    else if (p === 'suppliers') { const item = this.suppliers().find(s => s.id === id); if (!item) return; const newId = Math.max(0, ...this.suppliers().map(s => s.id)) + 1; this.suppliers.update(l => [...l, { ...item, id: newId, code: this.autoCode('SUP', newId), name: item.name + ' (Copy)' }]); }
+    else if (p === 'pricings') { const item = this.pricings().find(x => x.id === id); if (!item) return; const newId = Math.max(0, ...this.pricings().map(x => x.id)) + 1; this.pricings.update(l => [...l, { ...item, id: newId, code: item.code + '_C', shortDescription: item.shortDescription + ' (Copy)' }]); }
+  }
+
+
+  // ─── Questionnaire (delegated to QuestionnaireService) ───────────────────
+  get questionnaires() { return this.qService.questionnaires; }
+
+  // Inline detail state
+  selectedQuestionnaire = signal<Questionnaire | null>(null);
+  selectedGroup = signal<QuestionGroup | null>(null);
+  showGroupModal = signal(false);
+  showQuestionModal = signal(false);
+  groupForm = signal<Partial<QuestionGroup>>({});
+  questionForm = signal<Partial<Question>>({});
+  questionOptions = signal<QuestionOption[]>([]);
+  newOptionLabel = signal('');
+
+  readonly questionTypes: { value: QuestionType; label: string }[] = [
+    { value: 'text', label: 'Short Text' }, { value: 'textarea', label: 'Long Text' },
+    { value: 'radio', label: 'Single Choice' }, { value: 'checkbox', label: 'Multiple Choice' },
+    { value: 'select', label: 'Dropdown' }, { value: 'number', label: 'Number' },
+    { value: 'date', label: 'Date' }, { value: 'yesno', label: 'Yes / No' },
+  ];
+
+  filteredQuestionnaires = computed(() => {
+    const q = this.searchTerm().toLowerCase();
+    return this.qService.questionnaires().filter(x => !q || x.description.toLowerCase().includes(q) || x.referenceToken.toLowerCase().includes(q));
+  });
+  paginatedQuestionnaires = computed(() => this.paginate(this.filteredQuestionnaires()));
+
+  navigateToQuestionnaire(id: number): void { this.router.navigate(['/configuration/questionnaire', id]); }
+  openQuestionnaire(q: Questionnaire): void { this.navigateToQuestionnaire(q.id); }
+
+  openServiceDetail(svc: Service): void { this.router.navigate(['/configuration/service', svc.id]); }
+  closeServiceDetail(): void { this.selectedService.set(null); }
+
+  onImageUpload(event: Event, target: 'service' | 'product'): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (target === 'service') this.serviceForm.update(f => ({ ...f, imageUrl: dataUrl }));
+      else this.productForm.update(f => ({ ...f, imageUrl: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  readonly serviceTypes = ['Therapy', 'Treatment', 'Beauty', 'Package', 'Membership', 'Content', 'Consultation', 'Other'];
+  readonly onlineStatusOptions = ['Online', 'Offline', 'Draft'];
+  readonly pricingCategories = ['Normal', 'Maison', 'Membership', 'Room Charge', 'Credit Card', 'Cash', 'Voucher', 'Package'];
   readonly statusOptions = ['Active', 'Inactive', 'Draft'];
+
+  // ─── Service Detail ───────────────────────────────────────────────────────
+  selectedService = signal<Service | null>(null);
+  serviceDetailTab = signal<'areas' | 'employee-exceptions' | 'medical-conditions' | 'tax-groups' | 'price-lists' | 'audit'>('areas');
+
+  // Per-service detail data keyed by service id
+  serviceAreas = signal<Record<number, number[]>>({}); // serviceId -> areaIds[]
+  areaSearchTerm = signal('');
+
+  serviceEmployeeExceptions = signal<Record<number, { id: number; employeeId: string; employeeName: string; reason: string }[]>>({});
+  serviceMedicalConditions = signal<Record<number, { id: number; condition: string; notes: string }[]>>({});
+  serviceTaxGroups = signal<Record<number, { id: number; name: string; type: string; rate: number }[]>>({});
+  servicePriceLists = signal<Record<number, { id: number; pricingId: number; pricingName: string; price: number; taxIncluded: boolean; effectiveFrom: string; effectiveTo: string; active: boolean }[]>>({});
+  servicePriceHistory = signal<Record<number, { id: number; pricingName: string; oldPrice: number; newPrice: number; changedBy: string; changedAt: string }[]>>({});
+  serviceAuditLog = signal<Record<number, { id: number; action: string; field: string; oldValue: string; newValue: string; changedBy: string; changedAt: string }[]>>({});
+
+  // New entry forms
+  newEmployeeException = signal<{ employeeId: string; employeeName: string; reason: string }>({ employeeId: '', employeeName: '', reason: '' });
+  newMedicalCondition = signal<{ condition: string; notes: string }>({ condition: '', notes: '' });
+  newTaxGroup = signal<{ name: string; type: string; rate: number }>({ name: '', type: 'Percentage', rate: 0 });
+  newPriceEntry = signal<{ pricingId: number; price: number; taxIncluded: boolean; effectiveFrom: string; effectiveTo: string }>({ pricingId: 1, price: 0, taxIncluded: true, effectiveFrom: new Date().toISOString().split('T')[0], effectiveTo: '' });
+
+  readonly taxTypes = ['Percentage', 'Fixed', 'Exempt'];
+  readonly employeeList = [
+    { id: 't1', name: 'Emma Wilson' }, { id: 't2', name: 'Olivia Martinez' },
+    { id: 't3', name: 'Sophia Kim' }, { id: 't4', name: 'Isabella Davis' }, { id: 't5', name: 'Mia Johnson' }
+  ];
+
+
+  // Areas dual-list
+  availableAreas = computed(() => {
+    const svc = this.selectedService();
+    if (!svc) return [];
+    const selected = this.serviceAreas()[svc.id] ?? [];
+    const q = this.areaSearchTerm().toLowerCase();
+    return this.areas().filter(a => !selected.includes(a.id) && (!q || a.description.toLowerCase().includes(q)));
+  });
+
+  selectedAreas = computed(() => {
+    const svc = this.selectedService();
+    if (!svc) return [];
+    const selected = this.serviceAreas()[svc.id] ?? [];
+    return this.areas().filter(a => selected.includes(a.id));
+  });
+
+  areaSelection = signal<number[]>([]); // highlighted in left list
+  selectedAreaSelection = signal<number[]>([]); // highlighted in right list
+
+  toggleAreaSelection(id: number): void {
+    this.areaSelection.update(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  }
+  toggleSelectedAreaSelection(id: number): void {
+    this.selectedAreaSelection.update(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  }
+
+  addAreas(): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const toAdd = this.areaSelection();
+    this.serviceAreas.update(m => ({ ...m, [svc.id]: [...(m[svc.id] ?? []), ...toAdd] }));
+    this.areaSelection.set([]);
+    this.logAudit(svc.id, 'Added Areas', toAdd.map(id => this.areas().find(a => a.id === id)?.description ?? '').join(', '));
+  }
+
+  removeAreas(): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const toRemove = this.selectedAreaSelection();
+    this.serviceAreas.update(m => ({ ...m, [svc.id]: (m[svc.id] ?? []).filter(id => !toRemove.includes(id)) }));
+    this.selectedAreaSelection.set([]);
+    this.logAudit(svc.id, 'Removed Areas', toRemove.map(id => this.areas().find(a => a.id === id)?.description ?? '').join(', '));
+  }
+
+  // Employee exceptions
+  addEmployeeException(): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const f = this.newEmployeeException();
+    if (!f.employeeId) return;
+    const emp = this.employeeList.find(e => e.id === f.employeeId);
+    const newId = Math.max(0, ...(this.serviceEmployeeExceptions()[svc.id] ?? []).map(e => e.id ?? 0)) + 1;
+    this.serviceEmployeeExceptions.update(m => ({ ...m, [svc.id]: [...(m[svc.id] ?? []), { employeeId: f.employeeId, employeeName: emp?.name ?? f.employeeId, reason: f.reason, id: newId } as any] }));
+    this.newEmployeeException.set({ employeeId: '', employeeName: '', reason: '' });
+    this.logAudit(svc.id, 'Added Employee Exception', emp?.name ?? f.employeeId);
+  }
+
+  removeEmployeeException(idx: number): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const item = (this.serviceEmployeeExceptions()[svc.id] ?? [])[idx];
+    this.serviceEmployeeExceptions.update(m => ({ ...m, [svc.id]: (m[svc.id] ?? []).filter((_, i) => i !== idx) }));
+    this.logAudit(svc.id, 'Removed Employee Exception', item?.employeeName ?? '');
+  }
+
+  // Medical conditions
+  addMedicalCondition(): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const f = this.newMedicalCondition();
+    if (!f.condition) return;
+    const newId = Math.max(0, ...(this.serviceMedicalConditions()[svc.id] ?? []).map(c => c.id)) + 1;
+    this.serviceMedicalConditions.update(m => ({ ...m, [svc.id]: [...(m[svc.id] ?? []), { id: newId, condition: f.condition, notes: f.notes }] }));
+    this.newMedicalCondition.set({ condition: '', notes: '' });
+    this.logAudit(svc.id, 'Added Medical Condition', f.condition);
+  }
+
+  removeMedicalCondition(id: number): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const item = (this.serviceMedicalConditions()[svc.id] ?? []).find(c => c.id === id);
+    this.serviceMedicalConditions.update(m => ({ ...m, [svc.id]: (m[svc.id] ?? []).filter(c => c.id !== id) }));
+    this.logAudit(svc.id, 'Removed Medical Condition', item?.condition ?? '');
+  }
+
+  // Tax groups
+  addTaxGroup(): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const f = this.newTaxGroup();
+    if (!f.name) return;
+    const newId = Math.max(0, ...(this.serviceTaxGroups()[svc.id] ?? []).map(t => t.id)) + 1;
+    this.serviceTaxGroups.update(m => ({ ...m, [svc.id]: [...(m[svc.id] ?? []), { id: newId, name: f.name, type: f.type, rate: f.rate }] }));
+    this.newTaxGroup.set({ name: '', type: 'Percentage', rate: 0 });
+    this.logAudit(svc.id, 'Added Tax Group', `${f.name} ${f.rate}${f.type === 'Percentage' ? '%' : ''}`);
+  }
+
+  removeTaxGroup(id: number): void {
+    const svc = this.selectedService(); if (!svc) return;
+    this.serviceTaxGroups.update(m => ({ ...m, [svc.id]: (m[svc.id] ?? []).filter(t => t.id !== id) }));
+    this.logAudit(svc.id, 'Removed Tax Group', String(id));
+  }
+
+  // Price lists
+  addPriceEntry(): void {
+    const svc = this.selectedService(); if (!svc) return;
+    const f = this.newPriceEntry();
+    const pricing = this.pricings().find(p => p.id === f.pricingId);
+    const newId = Math.max(0, ...(this.servicePriceLists()[svc.id] ?? []).map(p => p.id)) + 1;
+    const oldPrice = svc.price;
+    this.servicePriceLists.update(m => ({ ...m, [svc.id]: [...(m[svc.id] ?? []), { id: newId, pricingId: f.pricingId, pricingName: pricing?.shortDescription ?? '', price: f.price, taxIncluded: f.taxIncluded, effectiveFrom: f.effectiveFrom, effectiveTo: f.effectiveTo, active: true }] }));
+    // add to history
+    this.servicePriceHistory.update(m => ({ ...m, [svc.id]: [{ id: (m[svc.id]?.length ?? 0) + 1, pricingName: pricing?.shortDescription ?? '', oldPrice, newPrice: f.price, changedBy: 'Admin', changedAt: new Date().toLocaleString() }, ...(m[svc.id] ?? [])] }));
+    this.newPriceEntry.set({ pricingId: 1, price: 0, taxIncluded: true, effectiveFrom: new Date().toISOString().split('T')[0], effectiveTo: '' });
+    this.logAudit(svc.id, 'Updated Price', `${pricing?.shortDescription}: $${f.price}`);
+  }
+
+  removePriceEntry(id: number): void {
+    const svc = this.selectedService(); if (!svc) return;
+    this.servicePriceLists.update(m => ({ ...m, [svc.id]: (m[svc.id] ?? []).filter(p => p.id !== id) }));
+    this.logAudit(svc.id, 'Removed Price Entry', String(id));
+  }
+
+  private logAudit(serviceId: number, action: string, detail: string): void {
+    const newId = Math.max(0, ...(this.serviceAuditLog()[serviceId] ?? []).map(a => a.id)) + 1;
+    this.serviceAuditLog.update(m => ({ ...m, [serviceId]: [{ id: newId, action, field: detail, oldValue: '—', newValue: '—', changedBy: 'Admin', changedAt: new Date().toLocaleString() }, ...(m[serviceId] ?? [])] }));
+  }
 }

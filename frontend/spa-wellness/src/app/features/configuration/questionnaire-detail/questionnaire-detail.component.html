@@ -1,0 +1,239 @@
+@if (questionnaire()) {
+<div class="qd-page">
+
+  <!-- Header -->
+  <div class="qd-header">
+    <div class="qd-header-top">
+      <button class="back-btn" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Questionnaires
+      </button>
+      <div class="qd-breadcrumb">
+        <span>Configuration</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>Questionnaires</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="qd-bc-current">{{ questionnaire()!.description }}</span>
+      </div>
+    </div>
+
+    <div class="qd-meta">
+      <div class="fg"><label>Description *</label>
+        <input class="input" [ngModel]="questionnaire()!.description" (ngModelChange)="questionnaire.update(q=>q?{...q,description:$event}:q)">
+      </div>
+      <div class="fg"><label>Reference Token</label>
+        <input class="input" [ngModel]="questionnaire()!.referenceToken" (ngModelChange)="questionnaire.update(q=>q?{...q,referenceToken:$event}:q)">
+      </div>
+      <div class="fg"><label>Active From</label>
+        <input class="input" type="date" [ngModel]="questionnaire()!.activeFrom" (ngModelChange)="questionnaire.update(q=>q?{...q,activeFrom:$event}:q)">
+      </div>
+      <div class="fg"><label>Active To</label>
+        <input class="input" type="date" [ngModel]="questionnaire()!.activeTo" (ngModelChange)="questionnaire.update(q=>q?{...q,activeTo:$event}:q)">
+      </div>
+      <div class="fg"><label>Valid (days)</label>
+        <input class="input" type="number" min="0" [ngModel]="questionnaire()!.answersValidDays" (ngModelChange)="questionnaire.update(q=>q?{...q,answersValidDays:+$event}:q)">
+      </div>
+      <div class="fg"><label>Status</label>
+        <select class="input" [ngModel]="questionnaire()!.status" (ngModelChange)="questionnaire.update(q=>q?{...q,status:$event}:q)">
+          <option>Active</option><option>Inactive</option><option>Draft</option>
+        </select>
+      </div>
+      <div class="fg fg-check" style="align-self:flex-end">
+        <label class="check-label">
+          <input type="checkbox" [ngModel]="questionnaire()!.updateCustomerInfo" (ngModelChange)="questionnaire.update(q=>q?{...q,updateCustomerInfo:$event}:q)">
+          Update Customer Info
+        </label>
+      </div>
+      <button class="btn-primary" style="align-self:flex-end" (click)="save()">Save</button>
+    </div>
+  </div>
+
+  <!-- Builder -->
+  <div class="qd-builder">
+
+    <!-- Left: groups -->
+    <div class="qd-groups-col">
+      <div class="qd-col-header">
+        <span>Question Groups</span>
+        <button class="btn-primary btn-sm" (click)="openAddGroup()">+ Add Group</button>
+      </div>
+      <div class="qd-groups-list">
+        @for (g of questionnaire()!.groups; track g.id) {
+          <div class="qd-group-card" [class.active]="selectedGroup()?.id === g.id" (click)="selectGroup(g)">
+            <span class="qd-drag-handle">⠿</span>
+            <div class="qd-group-body">
+              <span class="qd-group-name">{{ g.title }}</span>
+              <span class="qd-group-meta">Order: {{ g.order }} · {{ g.type }}</span>
+            </div>
+            <button class="action-icon delete" (click)="$event.stopPropagation(); deleteGroup(g.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            </button>
+          </div>
+        }
+        @if (!questionnaire()!.groups.length) {
+          <div class="qd-empty">No groups yet. Click + Add Group.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Right: questions + preview -->
+    <div class="qd-right-col">
+      @if (selectedGroup()) {
+        <div class="qd-questions-section">
+          <div class="qd-section-header">
+            <h3>{{ selectedGroup()!.title }}</h3>
+            <button class="btn-primary btn-sm" (click)="openAddQuestion()">+ Add Question</button>
+          </div>
+
+          <!-- Questions list -->
+          <div class="qd-questions-list">
+            @for (q of selectedGroup()!.questions; track q.id) {
+              <div class="qd-question-row">
+                <div class="qd-q-info">
+                  <span class="qd-q-label">{{ q.label }}</span>
+                  <div class="qd-q-tags">
+                    <span class="type-badge">{{ q.type }}</span>
+                    @if (q.required) { <span class="required-badge">Required</span> }
+                  </div>
+                </div>
+                <button class="action-icon delete" (click)="deleteQuestion(q.id)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                </button>
+              </div>
+            }
+            @if (!selectedGroup()!.questions.length) {
+              <div class="qd-empty">No questions yet. Click + Add Question.</div>
+            }
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="qd-preview-section">
+          <div class="qd-preview-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Form Preview — {{ selectedGroup()!.title }}
+          </div>
+          <div class="qd-preview-body">
+            @for (q of selectedGroup()!.questions; track q.id) {
+              <div class="qd-preview-field">
+                <label class="qd-preview-label">
+                  {{ q.label }}
+                  @if (q.required) { <span class="required-star">*</span> }
+                </label>
+                @if (q.type === 'text') { <input class="input" [placeholder]="q.placeholder || 'Enter text...'" disabled> }
+                @if (q.type === 'textarea') { <textarea class="input" rows="2" [placeholder]="q.placeholder || 'Enter details...'" disabled></textarea> }
+                @if (q.type === 'number') { <input class="input" type="number" placeholder="0" disabled> }
+                @if (q.type === 'date') { <input class="input" type="date" disabled> }
+                @if (q.type === 'yesno') {
+                  <div class="qd-choice-row">
+                    <label class="check-label"><input type="radio" disabled> Yes</label>
+                    <label class="check-label"><input type="radio" disabled> No</label>
+                  </div>
+                }
+                @if (q.type === 'radio') {
+                  <div class="qd-choices">
+                    @for (opt of q.options; track opt.id) {
+                      <label class="check-label"><input type="radio" disabled> {{ opt.label }}</label>
+                    }
+                  </div>
+                }
+                @if (q.type === 'checkbox') {
+                  <div class="qd-choices">
+                    @for (opt of q.options; track opt.id) {
+                      <label class="check-label"><input type="checkbox" disabled> {{ opt.label }}</label>
+                    }
+                  </div>
+                }
+                @if (q.type === 'select') {
+                  <select class="input" disabled>
+                    <option value="">Select...</option>
+                    @for (opt of q.options; track opt.id) { <option>{{ opt.label }}</option> }
+                  </select>
+                }
+              </div>
+            }
+            @if (!selectedGroup()!.questions.length) {
+              <div class="qd-empty">Add questions to see the preview</div>
+            }
+          </div>
+        </div>
+
+      } @else {
+        <div class="qd-no-selection">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Select a group from the left to edit its questions</p>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>
+}
+
+<!-- GROUP MODAL -->
+@if (showGroupModal()) {
+  <div class="modal-overlay" (click)="showGroupModal.set(false)">
+    <div class="modal-box" style="max-width:420px" (click)="$event.stopPropagation()">
+      <div class="modal-head"><h3>Add Question Group</h3><button class="modal-close" (click)="showGroupModal.set(false)">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="fg fg-full"><label>Group Title *</label><input class="input" [ngModel]="groupForm().title" (ngModelChange)="groupForm.update(f=>({...f,title:$event}))"></div>
+          <div class="fg"><label>Type</label>
+            <select class="input" [ngModel]="groupForm().type" (ngModelChange)="groupForm.update(f=>({...f,type:$event}))">
+              <option value="Profile">Profile</option><option value="Question">Question</option>
+            </select>
+          </div>
+          <div class="fg"><label>Order</label><input class="input" type="number" min="1" [ngModel]="groupForm().order" (ngModelChange)="groupForm.update(f=>({...f,order:+$event}))"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-secondary" (click)="showGroupModal.set(false)">Cancel</button>
+        <button class="btn-primary" (click)="saveGroup()">Add Group</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- QUESTION MODAL -->
+@if (showQuestionModal()) {
+  <div class="modal-overlay" (click)="showQuestionModal.set(false)">
+    <div class="modal-box" style="max-width:520px" (click)="$event.stopPropagation()">
+      <div class="modal-head"><h3>Add Question</h3><button class="modal-close" (click)="showQuestionModal.set(false)">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="fg fg-full"><label>Question Label *</label><input class="input" [ngModel]="questionForm().label" (ngModelChange)="questionForm.update(f=>({...f,label:$event}))"></div>
+          <div class="fg"><label>Type</label>
+            <select class="input" [ngModel]="questionForm().type" (ngModelChange)="questionForm.update(f=>({...f,type:$event})); questionOptions.set([])">
+              @for (t of questionTypes; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+            </select>
+          </div>
+          <div class="fg"><label>Placeholder</label><input class="input" [ngModel]="questionForm().placeholder" (ngModelChange)="questionForm.update(f=>({...f,placeholder:$event}))"></div>
+          <div class="fg fg-check"><label class="check-label"><input type="checkbox" [ngModel]="questionForm().required" (ngModelChange)="questionForm.update(f=>({...f,required:$event}))"> Required</label></div>
+          @if (hasOptions(questionForm().type)) {
+            <div class="fg fg-full">
+              <label>Options</label>
+              <div class="options-builder">
+                @for (opt of questionOptions(); track opt.id) {
+                  <div class="option-row">
+                    <span>{{ opt.label }}</span>
+                    <button class="action-icon delete" (click)="removeOption(opt.id)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                }
+                <div class="option-add-row">
+                  <input class="input" placeholder="Option label..." [ngModel]="newOptionLabel()" (ngModelChange)="newOptionLabel.set($event)" (keydown.enter)="addOption()">
+                  <button class="btn-secondary" (click)="addOption()">Add</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-secondary" (click)="showQuestionModal.set(false)">Cancel</button>
+        <button class="btn-primary" (click)="saveQuestion()">Add Question</button>
+      </div>
+    </div>
+  </div>
+}

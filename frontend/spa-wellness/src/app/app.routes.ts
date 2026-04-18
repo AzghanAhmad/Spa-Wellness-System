@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { ConfigurationComponent } from './features/configuration/configuration.component';
 import {
   authGuard,
   adminGuard,
@@ -118,6 +119,23 @@ export const routes: Routes = [
           import('./features/configuration/configuration.component').then(
             (m) => m.ConfigurationComponent,
           ),
+      },
+      {
+        path: 'configuration/questionnaire/:id',
+        loadComponent: () =>
+          import('./features/configuration/questionnaire-detail/questionnaire-detail.component').then(
+            (m) => m.QuestionnaireDetailComponent,
+          ),
+      },
+      {
+        path: 'configuration/service/:id',
+        loadComponent: () =>
+          import('./features/configuration/service-detail/service-detail.component').then(
+            (m) => m.ServiceDetailComponent,
+          ),
+        providers: [
+          { provide: ConfigurationComponent, useClass: ConfigurationComponent }
+        ]
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
