@@ -1,8 +1,11 @@
 ﻿import { Component, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { BookingStoreService } from '../../core/services/booking-store.service';
+import { CartStoreService } from '../../core/services/cart-store.service';
 import { Booking, SpaService, Therapist, Room, BookingStatus } from '../../core/models';
 
 export interface BookingPopup {
@@ -43,8 +46,13 @@ export class BookingsComponent implements OnInit {
     notes: '', isGroupBooking: false, groupSize: 1
   };
 
-  timeSlots = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30',
-               '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+  timeSlots = ['08:00','08:15','08:30','08:45','09:00','09:15','09:30','09:45',
+               '10:00','10:15','10:30','10:45','11:00','11:15','11:30','11:45',
+               '12:00','12:15','12:30','12:45','13:00','13:15','13:30','13:45',
+               '14:00','14:15','14:30','14:45','15:00','15:15','15:30','15:45',
+               '16:00','16:15','16:30','16:45','17:00','17:15','17:30','17:45','18:00'];
+
+  hoverTime = signal<string | null>(null); // time shown at cursor
 
   readonly appointmentStatuses: { value: BookingStatus; label: string }[] = [
     { value: 'expected', label: 'Expected / Unarrived' },
@@ -101,10 +109,22 @@ export class BookingsComponent implements OnInit {
     };
   });
 
-  constructor(private readonly mockData: MockDataService, private readonly notification: NotificationService) {}
+  showPaymentDialog = signal<Booking | null>(null);
+
+  constructor(private readonly mockData: MockDataService, private readonly notification: NotificationService, private readonly router: Router, private readonly store: BookingStoreService, private readonly cartStore: CartStoreService) {}
 
   ngOnInit(): void {
-    this.mockData.getBookings().subscribe(b => { this.bookings.set(b); this.isLoading.set(false); });
+    this.mockData.getBookings().subscribe(b => {
+      this.store.init(b);
+      // Always read from store so new bookings added elsewhere are visible
+      this.bookings.set(this.store.getAll());
+      this.isLoading.set(false);
+    });
+    // If store already initialized (returning from new-booking page), sync immediately
+    if (this.store.getAll().length) {
+      this.bookings.set(this.store.getAll());
+      this.isLoading.set(false);
+    }
     this.mockData.getServices().subscribe(s => this.services.set(s));
     this.mockData.getTherapists().subscribe(t => this.therapists.set(t));
     this.mockData.getRooms().subscribe(r => this.rooms.set(r));
@@ -332,6 +352,24 @@ export class BookingsComponent implements OnInit {
 
   goToToday(): void { this.currentDate.set(new Date()); }
 
+  onCellMouseEnter(time: string): void { this.hoverTime.set(time); }
+  onCellMouseLeave(): void { this.hoverTime.set(null); }
+
+  openNewBooking(therapistId: string, time: string): void {
+    const date = this.currentDate().toISOString().split('T')[0];
+    this.router.navigate(['/bookings/new'], { queryParams: { therapistId, date, time } });
+  }
+
+  openNewBookingWeek(day: Date, time: string): void {
+    const date = day.toISOString().split('T')[0];
+    this.router.navigate(['/bookings/new'], { queryParams: { date, time } });
+  }
+
+  editBooking(booking: Booking): void {
+    this.activePopup.set(null);
+    this.router.navigate(['/bookings/new'], { queryParams: { editId: booking.id } });
+  }
+
   getCalendarTitle(): string {
     const v = this.calendarView();
     if (v === 'month') return this.currentDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -342,7 +380,7 @@ export class BookingsComponent implements OnInit {
   getBookingSpanRows(booking: Booking): number {
     const [sh, sm] = booking.startTime.split(':').map(Number);
     const [eh, em] = booking.endTime.split(':').map(Number);
-    return Math.max(1, Math.round(((eh * 60 + em) - (sh * 60 + sm)) / 30));
+    return Math.max(1, Math.round(((eh * 60 + em) - (sh * 60 + sm)) / 15));
   }
 
   isBookingSlotStart(booking: Booking, time: string): boolean { return booking.startTime === time; }
@@ -355,8 +393,28 @@ export class BookingsComponent implements OnInit {
     const popup = this.activePopup();
     if (!popup) return;
     this.bookings.update(list => list.map(b => b.id === popup.booking.id ? { ...b, status } : b));
+    this.store.update(popup.booking.id, { status });
     this.activePopup.update(p => p ? { ...p, booking: { ...p.booking, status } } : null);
     this.notification.success('Status Updated', `Booking marked as ${this.getStatusLabel(status)}`);
+    // If departed, prompt for payment
+    if (status === 'departed') {
+      this.showPaymentDialog.set({ ...popup.booking, status });
+      this.activePopup.set(null);
+    }
+  }
+
+  payNow(booking: Booking): void {
+    const lines = booking.services.map(svc =>
+      this.cartStore.buildLine(booking.id, svc.serviceId, svc.serviceName, booking.therapistId, booking.therapistName, booking.date, booking.startTime, 'Departed', svc.price, 19)
+    );
+    this.cartStore.openCart(booking.customerId, booking.customerName, lines);
+    this.showPaymentDialog.set(null);
+    this.router.navigate(['/cart']);
+  }
+
+  postponePayment(booking: Booking): void {
+    this.notification.success('Payment Postponed', `${booking.customerName}'s payment will be collected later.`);
+    this.showPaymentDialog.set(null);
   }
 
   createBooking(): void {

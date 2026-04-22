@@ -16,6 +16,8 @@ export const matchStaffLayout: CanMatchFn = (_route, segments: UrlSegment[]) => 
 const ADMIN_ROOT_SEGMENTS = new Set([
   'dashboard',
   'bookings',
+  'bookings/new',
+  'cart',
   'customers',
   'memberships',
   'vouchers',

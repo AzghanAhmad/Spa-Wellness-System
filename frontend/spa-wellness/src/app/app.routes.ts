@@ -76,6 +76,16 @@ export const routes: Routes = [
           import('./features/bookings/bookings.component').then((m) => m.BookingsComponent),
       },
       {
+        path: 'bookings/new',
+        loadComponent: () =>
+          import('./features/bookings/new-booking/new-booking.component').then((m) => m.NewBookingComponent),
+      },
+      {
+        path: 'cart',
+        loadComponent: () =>
+          import('./features/cart/cart.component').then((m) => m.CartComponent),
+      },
+      {
         path: 'customers',
         loadComponent: () =>
           import('./features/customers/customers.component').then((m) => m.CustomersComponent),

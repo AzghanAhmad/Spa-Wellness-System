@@ -356,6 +356,90 @@
       </table></div></div>
     }
 
+    <!-- EMPLOYEES -->
+    @if (activePage() === 'employees') {
+      <div class="config-card"><div class="table-wrap"><table class="cfg-table">
+        <thead><tr><th>Code</th><th>Name</th><th>Role</th><th>Specialties</th><th>Email</th><th>Phone</th><th>Hire Date</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          @for (e of paginatedEmployees(); track e.id) {
+            <tr>
+              <td><span class="code-badge">{{ e.code }}</span></td>
+              <td class="desc-cell">
+                <div class="person-cell">
+                  <div class="person-avatar">{{ e.firstName[0] }}{{ e.lastName[0] }}</div>
+                  <div>
+                    <span class="person-name">{{ e.firstName }} {{ e.lastName }}</span>
+                    <span class="person-sub">{{ e.gender }}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="role-badge role-{{ e.role }}">{{ e.role }}</span></td>
+              <td>
+                <div class="tag-list">
+                  @for (s of e.specialties; track s) { <span class="mbr-feat">{{ s }}</span> }
+                </div>
+              </td>
+              <td class="email-cell">{{ e.email }}</td>
+              <td>{{ e.phone }}</td>
+              <td>{{ e.hireDate }}</td>
+              <td><button class="toggle-btn" [class.on]="e.status === 'Active'" (click)="toggleActive(e.id)">{{ e.status }}</button></td>
+              <td class="actions-cell">
+                <button class="action-icon edit" (click)="openEdit(e)" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="action-icon delete" (click)="deleteItem(e.id)" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </td>
+            </tr>
+          }
+          @if (!paginatedEmployees().length) { <tr><td colspan="9" class="empty-row">No employees found</td></tr> }
+        </tbody>
+      </table></div></div>
+    }
+
+    <!-- CUSTOMERS -->
+    @if (activePage() === 'customers') {
+      <div class="config-card"><div class="table-wrap"><table class="cfg-table">
+        <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Contact</th><th>Birthday</th><th>Nationality</th><th>Membership</th><th>Questionnaires</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          @for (c of paginatedCustomers(); track c.id) {
+            <tr>
+              <td><span class="code-badge">{{ c.code }}</span></td>
+              <td class="desc-cell">
+                <div class="person-cell">
+                  <div class="person-avatar">{{ c.firstName[0] }}{{ c.lastName[0] }}</div>
+                  <div>
+                    <span class="person-name">{{ c.salutation }} {{ c.firstName }} {{ c.lastName }}</span>
+                    <span class="person-sub">{{ c.gender }}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="type-badge">{{ c.type }}</span></td>
+              <td>
+                <div class="contact-cell">
+                  <span>{{ c.email }}</span>
+                  @if (c.phone) { <span class="person-sub">{{ c.phone }}</span> }
+                </div>
+              </td>
+              <td>{{ c.birthDate || '—' }}</td>
+              <td>{{ c.nationality || '—' }}</td>
+              <td>
+                @if (c.membershipId) { <span class="group-pill">{{ getMembershipName(c.membershipId) }}</span> }
+                @else { <span class="muted-text">—</span> }
+              </td>
+              <td class="center-cell">
+                @if (c.questionnaires.length) { <span class="count-badge">{{ c.questionnaires.length }}</span> }
+                @else { <span class="muted-text">—</span> }
+              </td>
+              <td><button class="toggle-btn" [class.on]="c.status === 'Active'" (click)="toggleActive(c.id)">{{ c.status }}</button></td>
+              <td class="actions-cell">
+                <button class="action-icon edit" (click)="openEdit(c)" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="action-icon delete" (click)="deleteItem(c.id)" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </td>
+            </tr>
+          }
+          @if (!paginatedCustomers().length) { <tr><td colspan="10" class="empty-row">No customers found</td></tr> }
+        </tbody>
+      </table></div></div>
+    }
+
     <!-- PAGINATION -->
     <div class="pagination-bar">
       <div class="page-size-group">
@@ -636,6 +720,96 @@
                   <input class="input" placeholder="Add benefit..." [ngModel]="newBenefit()" (ngModelChange)="newBenefit.set($event)" (keydown.enter)="addBenefit()">
                   <button class="btn-secondary" type="button" (click)="addBenefit()">Add</button>
                 </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activePage() === 'employees') {
+          <div class="form-grid">
+            <div class="fg"><label>Code</label><input class="input" [ngModel]="employeeForm().code" (ngModelChange)="employeeForm.update(f=>({...f,code:$event}))"></div>
+            <div class="fg"><label>Role</label>
+              <select class="input" [ngModel]="employeeForm().role" (ngModelChange)="employeeForm.update(f=>({...f,role:$event}))">
+                @for (r of employeeRoles; track r) { <option [value]="r">{{ r | titlecase }}</option> }
+              </select>
+            </div>
+            <div class="fg"><label>First Name *</label><input class="input" [ngModel]="employeeForm().firstName" (ngModelChange)="employeeForm.update(f=>({...f,firstName:$event}))"></div>
+            <div class="fg"><label>Last Name *</label><input class="input" [ngModel]="employeeForm().lastName" (ngModelChange)="employeeForm.update(f=>({...f,lastName:$event}))"></div>
+            <div class="fg"><label>Gender</label>
+              <select class="input" [ngModel]="employeeForm().gender" (ngModelChange)="employeeForm.update(f=>({...f,gender:$event}))">
+                <option>Male</option><option>Female</option><option>Other</option>
+              </select>
+            </div>
+            <div class="fg"><label>Birth Date</label><input class="input" type="date" [ngModel]="employeeForm().birthDate" (ngModelChange)="employeeForm.update(f=>({...f,birthDate:$event}))"></div>
+            <div class="fg"><label>Email</label><input class="input" type="email" [ngModel]="employeeForm().email" (ngModelChange)="employeeForm.update(f=>({...f,email:$event}))"></div>
+            <div class="fg"><label>Phone</label><input class="input" type="tel" [ngModel]="employeeForm().phone" (ngModelChange)="employeeForm.update(f=>({...f,phone:$event}))"></div>
+            <div class="fg"><label>Hire Date</label><input class="input" type="date" [ngModel]="employeeForm().hireDate" (ngModelChange)="employeeForm.update(f=>({...f,hireDate:$event}))"></div>
+            <div class="fg"><label>Status</label>
+              <select class="input" [ngModel]="employeeForm().status" (ngModelChange)="employeeForm.update(f=>({...f,status:$event}))">
+                @for (s of employeeStatuses; track s) { <option [value]="s">{{ s }}</option> }
+              </select>
+            </div>
+            <div class="fg fg-full"><label>Address</label><input class="input" [ngModel]="employeeForm().address" (ngModelChange)="employeeForm.update(f=>({...f,address:$event}))"></div>
+            <div class="fg fg-full"><label>Emergency Contact</label><input class="input" [ngModel]="employeeForm().emergencyContact" (ngModelChange)="employeeForm.update(f=>({...f,emergencyContact:$event}))"></div>
+            <div class="fg fg-full"><label>Notes</label><textarea class="input" rows="2" [ngModel]="employeeForm().notes" (ngModelChange)="employeeForm.update(f=>({...f,notes:$event}))"></textarea></div>
+          </div>
+        }
+
+        @if (activePage() === 'customers') {
+          <div class="form-grid">
+            <div class="fg"><label>Salutation</label>
+              <select class="input" [ngModel]="customerForm().salutation" (ngModelChange)="customerForm.update(f=>({...f,salutation:$event}))">
+                @for (s of salutationOptions; track s) { <option [value]="s">{{ s }}</option> }
+              </select>
+            </div>
+            <div class="fg"><label>Type</label>
+              <select class="input" [ngModel]="customerForm().type" (ngModelChange)="customerForm.update(f=>({...f,type:$event}))">
+                <option value="individual">Individual</option><option value="group">Group</option>
+              </select>
+            </div>
+            <div class="fg"><label>First Name *</label><input class="input" [ngModel]="customerForm().firstName" (ngModelChange)="customerForm.update(f=>({...f,firstName:$event}))"></div>
+            <div class="fg"><label>Last Name *</label><input class="input" [ngModel]="customerForm().lastName" (ngModelChange)="customerForm.update(f=>({...f,lastName:$event}))"></div>
+            <div class="fg"><label>Gender</label>
+              <select class="input" [ngModel]="customerForm().gender" (ngModelChange)="customerForm.update(f=>({...f,gender:$event}))">
+                <option>Male</option><option>Female</option><option>Other</option>
+              </select>
+            </div>
+            <div class="fg"><label>Nationality</label>
+              <select class="input" [ngModel]="customerForm().nationality" (ngModelChange)="customerForm.update(f=>({...f,nationality:$event}))">
+                <option value="">Select...</option>
+                @for (n of nationalityOptions; track n) { <option [value]="n">{{ n }}</option> }
+              </select>
+            </div>
+            <div class="fg"><label>Birthday</label><input class="input" type="date" [ngModel]="customerForm().birthDate" (ngModelChange)="customerForm.update(f=>({...f,birthDate:$event}))"></div>
+            <div class="fg"><label>Email</label><input class="input" type="email" [ngModel]="customerForm().email" (ngModelChange)="customerForm.update(f=>({...f,email:$event}))"></div>
+            <div class="fg"><label>Contact Email</label><input class="input" type="email" [ngModel]="customerForm().contactEmail" (ngModelChange)="customerForm.update(f=>({...f,contactEmail:$event}))"></div>
+            <div class="fg"><label>Phone</label><input class="input" type="tel" [ngModel]="customerForm().phone" (ngModelChange)="customerForm.update(f=>({...f,phone:$event}))"></div>
+            <div class="fg"><label>Telephone</label><input class="input" type="tel" [ngModel]="customerForm().telephone" (ngModelChange)="customerForm.update(f=>({...f,telephone:$event}))"></div>
+            <div class="fg fg-full"><label>Address</label><input class="input" [ngModel]="customerForm().address" (ngModelChange)="customerForm.update(f=>({...f,address:$event}))"></div>
+            <div class="fg"><label>Membership</label>
+              <select class="input" [ngModel]="customerForm().membershipId" (ngModelChange)="customerForm.update(f=>({...f,membershipId:$event?+$event:undefined}))">
+                <option value="">None</option>
+                @for (m of membershipPlans(); track m.id) { <option [value]="m.id">{{ m.name }}</option> }
+              </select>
+            </div>
+            <div class="fg"><label>Status</label>
+              <select class="input" [ngModel]="customerForm().status" (ngModelChange)="customerForm.update(f=>({...f,status:$event}))">
+                <option>Active</option><option>Inactive</option>
+              </select>
+            </div>
+            <div class="fg fg-full"><label>Notes</label><textarea class="input" rows="2" [ngModel]="customerForm().notes" (ngModelChange)="customerForm.update(f=>({...f,notes:$event}))"></textarea></div>
+            <!-- Questionnaire assignment -->
+            <div class="fg fg-full">
+              <label>Assign Questionnaires</label>
+              <div class="qst-assign-list">
+                @for (q of qService.questionnaires(); track q.id) {
+                  <label class="check-label">
+                    <input type="checkbox"
+                      [checked]="(customerForm().questionnaires ?? []).some(x => x.questionnaireId === q.id)"
+                      (change)="toggleCustomerQuestionnaire(q.id, q.description, $event)">
+                    {{ q.description }}
+                  </label>
+                }
               </div>
             </div>
           </div>

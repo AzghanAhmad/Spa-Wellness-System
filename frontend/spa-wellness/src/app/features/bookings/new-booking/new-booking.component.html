@@ -1,0 +1,337 @@
+﻿<div class="nb-page">
+
+  <!-- Header -->
+  <div class="nb-header">
+    <div class="nb-header-top">
+      <button class="back-btn" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Calendar
+      </button>
+      <div class="nb-breadcrumb">
+        <span>Bookings</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="nb-bc-current">{{ isEditMode() ? 'Edit Appointment' : 'New Appointment' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-column layout -->
+  <div class="nb-layout">
+
+    <!-- ═══ LEFT SIDEBAR ═══ -->
+    <div class="nb-sidebar">
+
+      <!-- Customer section -->
+      <div class="nb-sidebar-section">
+        <div class="nb-sidebar-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Customer
+        </div>
+        @if (selectedCustomer()) {
+          <div class="nb-customer-selected">
+            <div class="nb-cust-avatar">{{ selectedCustomer()!.name.split(' ').map(n=>n[0]).join('') }}</div>
+            <div class="nb-cust-info">
+              <span class="nb-cust-name">{{ selectedCustomer()!.name }}</span>
+              <span class="nb-cust-sub">{{ selectedCustomer()!.email }}</span>
+            </div>
+            <button class="nb-cust-change" (click)="openCustomerModal()">Change</button>
+          </div>
+        } @else {
+          <button class="nb-select-customer-btn" (click)="openCustomerModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            Select Customer
+          </button>
+        }
+      </div>
+
+      <!-- Services section -->
+      <div class="nb-sidebar-section nb-services-section">
+        <div class="nb-sidebar-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Services
+          @if (selectedServiceIds().length) {
+            <span class="nb-svc-count">{{ selectedServiceIds().length }} selected</span>
+          }
+        </div>
+        <div class="nb-service-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search services..." [ngModel]="serviceSearch()" (ngModelChange)="serviceSearch.set($event)">
+        </div>
+        <div class="nb-service-list">
+          @for (svc of filteredServices(); track svc.id) {
+            <div class="nb-service-item" [class.active]="selectedServiceIds().includes(svc.id)" (click)="toggleService(svc.id)">
+              <div class="nb-svc-check">
+                @if (selectedServiceIds().includes(svc.id)) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+                }
+              </div>
+              <div class="nb-svc-item-body">
+                <span class="nb-svc-item-name">{{ svc.name }}</span>
+                <span class="nb-svc-item-meta">{{ svc.duration }}min · ${{ svc.price }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Selected services summary -->
+      @if (selectedServices().length) {
+        <div class="nb-selected-svcs">
+          @for (svc of selectedServices(); track svc.id) {
+            <div class="nb-sel-svc-row">
+              <span>{{ svc.name }}</span>
+              <span class="nb-sel-svc-dur">{{ svc.duration }}min</span>
+              <button class="nb-sel-svc-remove" (click)="toggleService(svc.id)">✕</button>
+            </div>
+          }
+          <div class="nb-sel-svc-total">
+            <span>Total</span>
+            <span>{{ totalDuration() }}min · ${{ totalPrice() }}</span>
+          </div>
+        </div>
+      }
+
+    </div>
+
+    <!-- ═══ CENTER: Availability ═══ -->
+    <div class="nb-center">
+      @if (!selectedServiceIds().length) {
+        <div class="nb-empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <p>Select a service from the left to see availability</p>
+        </div>
+      } @else {
+        <!-- Service header -->
+        <div class="nb-avail-header">
+          <div class="nb-avail-svc-name">
+            @if (selectedServices().length === 1) { {{ selectedServices()[0].name }} }
+            @else { {{ selectedServices().length }} services selected }
+          </div>
+          <div class="nb-avail-svc-meta">Total: {{ totalDuration() }}min &nbsp;·&nbsp; ${{ totalPrice() }}</div>
+        </div>
+
+        <!-- Date picker -->
+        <div class="nb-date-row">
+          <label>Date</label>
+          <input class="input nb-date-input" type="date" [ngModel]="bookingDate()" (ngModelChange)="bookingDate.set($event)">
+        </div>
+
+        <!-- Availability grid -->
+        <div class="nb-avail-grid-wrap">
+          <div class="nb-avail-grid">
+            <!-- Header -->
+            <div class="nb-avail-col-time">
+              <div class="nb-avail-col-head">Available Slots</div>
+              <div class="nb-slot-list">
+                @for (slot of availableSlots().slice(0, 16); track slot.time) {
+                  <div class="nb-slot"
+                       [class.selected]="startTime() === slot.time"
+                       (click)="selectSlot(slot.time)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {{ slot.time }} – {{ slot.end }}
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Time picker -->
+            <div class="nb-avail-col-time-pick">
+              <div class="nb-avail-col-head">Time</div>
+              <div class="nb-time-picker">
+                <div class="nb-time-spinners">
+                  <div class="nb-spinner">
+                    <button class="nb-spin-btn" (click)="startTime.set(adjustTime(startTime(), 'h', 1))">▲</button>
+                    <span class="nb-spin-val">{{ startTime().split(':')[0] }}</span>
+                    <button class="nb-spin-btn" (click)="startTime.set(adjustTime(startTime(), 'h', -1))">▼</button>
+                  </div>
+                  <span class="nb-spin-sep">:</span>
+                  <div class="nb-spinner">
+                    <button class="nb-spin-btn" (click)="startTime.set(adjustTime(startTime(), 'm', 15))">▲</button>
+                    <span class="nb-spin-val">{{ startTime().split(':')[1] }}</span>
+                    <button class="nb-spin-btn" (click)="startTime.set(adjustTime(startTime(), 'm', -15))">▼</button>
+                  </div>
+                </div>
+                <div class="nb-time-end">→ {{ endTime() }} &nbsp;({{ totalDuration() }}min total)</div>
+              </div>
+            </div>
+
+            <!-- Therapists -->
+            <div class="nb-avail-col-emp">
+              <div class="nb-avail-col-head">Employee</div>
+              <div class="nb-emp-list">
+                @for (t of therapists(); track t.id) {
+                  <label class="nb-emp-item">
+                    <input type="checkbox" [checked]="selectedTherapistId() === t.id" (change)="selectedTherapistId.set(selectedTherapistId() === t.id ? '' : t.id)">
+                    {{ t.name }}
+                  </label>
+                }
+              </div>
+            </div>
+
+            <!-- Rooms / Areas -->
+            <div class="nb-avail-col-area">
+              <div class="nb-avail-col-head">Area</div>
+              <div class="nb-area-list">
+                @for (r of rooms(); track r.id) {
+                  <label class="nb-area-item">
+                    <input type="checkbox" [checked]="selectedRoomId() === r.id" (change)="selectedRoomId.set(selectedRoomId() === r.id ? '' : r.id)">
+                    {{ r.name }}
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ═══ RIGHT PANEL ═══ -->
+    <div class="nb-right">
+      <div class="nb-panel">
+        <div class="nb-panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Appointment
+        </div>
+
+        <div class="nb-panel-date">{{ bookingDate() }}</div>
+
+        <div class="nb-panel-field">
+          <label>Status</label>
+          <select class="input" [ngModel]="status()" (ngModelChange)="status.set($event)">
+            @for (s of statusOptions; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+          </select>
+        </div>
+
+        <div class="nb-panel-field">
+          <label>Sale Employee</label>
+          <select class="input" [ngModel]="saleEmployee()" (ngModelChange)="saleEmployee.set($event)">
+            <option value="">Select...</option>
+            @for (t of therapists(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+          </select>
+        </div>
+
+        <div class="nb-panel-field">
+          <label>Source</label>
+          <select class="input" [ngModel]="source()" (ngModelChange)="source.set($event)">
+            <option value="">Select...</option>
+            @for (s of sourceOptions; track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+        </div>
+
+        <div class="nb-panel-field nb-confirmed-row">
+          <label class="check-label">
+            <input type="checkbox" [ngModel]="confirmed()" (ngModelChange)="confirmed.set($event)">
+            Confirmed
+          </label>
+        </div>
+
+        <!-- Summary -->
+        @if (selectedServices().length || selectedTherapist() || selectedCustomer()) {
+          <div class="nb-summary-card">
+            @if (selectedCustomer()) {
+              <div class="nb-sum-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ selectedCustomer()!.name }}
+              </div>
+            }
+            @for (svc of selectedServices(); track svc.id) {
+              <div class="nb-sum-row nb-sum-svc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                {{ svc.name }} <span class="nb-sum-dur">{{ svc.duration }}min</span>
+              </div>
+            }
+            @if (selectedServices().length) {
+              <div class="nb-sum-row nb-sum-time">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{ startTime() }} – {{ endTime() }}
+              </div>
+            }
+            @if (selectedTherapist()) {
+              <div class="nb-sum-row nb-sum-therapist">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ selectedTherapist()!.name }}
+              </div>
+            }
+            @if (selectedServices().length) {
+              <div class="nb-sum-price">${{ totalPrice() }}</div>
+            }
+          </div>
+        }
+
+        <div class="nb-panel-field">
+          <label>Comments</label>
+          <textarea class="input" rows="2" placeholder="Appointment comments..." [ngModel]="notes()" (ngModelChange)="notes.set($event)"></textarea>
+        </div>
+
+        <button class="btn-primary nb-save-btn" [disabled]="!canSave()" (click)="save()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          {{ isEditMode() ? 'Save Changes' : 'Create Booking' }}
+        </button>
+        <button class="btn-secondary nb-cancel-btn" (click)="goBack()">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ CUSTOMER SEARCH MODAL ═══ -->
+@if (showCustomerModal()) {
+  <div class="modal-overlay" (click)="showCustomerModal.set(false)">
+    <div class="nb-cust-modal" (click)="$event.stopPropagation()">
+      <div class="nb-cust-modal-head">
+        <h3>Customer Search</h3>
+        <button class="modal-close" (click)="showCustomerModal.set(false)">✕</button>
+      </div>
+      <div class="nb-cust-modal-body">
+        <div class="nb-cust-search-grid">
+          <div class="nb-fg"><label>Keyword</label><input class="input" placeholder="Type name to search..." [ngModel]="customerSearchKeyword()" (ngModelChange)="customerSearchKeyword.set($event)" autofocus></div>
+          <div class="nb-fg"><label>Status</label>
+            <select class="input" [ngModel]="customerSearchStatus()" (ngModelChange)="customerSearchStatus.set($event)">
+              <option value="">All</option><option>Active</option><option>Inactive</option>
+            </select>
+          </div>
+          <div class="nb-fg"><label>Email</label><input class="input" type="email" placeholder="email@..." [ngModel]="customerSearchEmail()" (ngModelChange)="customerSearchEmail.set($event)"></div>
+          <div class="nb-fg"><label>Mobile</label><input class="input" type="tel" placeholder="+1..." [ngModel]="customerSearchPhone()" (ngModelChange)="customerSearchPhone.set($event)"></div>
+        </div>
+
+        <!-- Live results -->
+        <div class="nb-cust-results">
+          @if (hasSearched()) {
+            @if (customerSearchResults().length) {
+              <table class="cfg-table">
+                <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Type</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  @for (c of customerSearchResults(); track c.id) {
+                    <tr class="clickable-row" (click)="selectCustomer(c)">
+                      <td class="desc-cell">{{ c.name }}</td>
+                      <td>{{ c.email }}</td>
+                      <td>{{ c.phone }}</td>
+                      <td>{{ c.type }}</td>
+                      <td><span class="toggle-btn on">{{ c.status }}</span></td>
+                      <td><button class="btn-primary btn-sm" (click)="$event.stopPropagation(); selectCustomer(c)">Select</button></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <div class="nb-no-results">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <p>No client found matching <strong>{{ customerSearchKeyword() }}</strong></p>
+                <button class="btn-primary" (click)="goToNewCustomer()">+ Create New Client</button>
+              </div>
+            }
+          } @else {
+            <div class="nb-search-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              Start typing a name, email or phone to search
+            </div>
+          }
+        </div>
+      </div>
+      <div class="nb-cust-modal-foot">
+        <button class="btn-secondary" (click)="goToNewCustomer()">+ New Customer</button>
+        <button class="btn-secondary" (click)="showCustomerModal.set(false)">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

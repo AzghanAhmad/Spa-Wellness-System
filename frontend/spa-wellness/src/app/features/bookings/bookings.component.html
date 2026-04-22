@@ -2,10 +2,6 @@
   <!-- Header -->
   <div class="page-header">
     <h1 class="page-title">Bookings & Scheduling</h1>
-    <button class="btn-primary" (click)="showNewBookingModal.set(true)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      New Booking
-    </button>
   </div>
 
   <!-- Stats Bar -->
@@ -85,12 +81,14 @@
         </div>
         <div class="calendar-body" (scroll)="onCalendarScroll()">
           @for (time of timeSlots; track time) {
-            <div class="calendar-row">
+            <div class="calendar-row" [class.hour-row]="time.endsWith(':00')">
               <div class="time-label">{{ time }}</div>
               @for (day of weekDays(); track day.getTime()) {
                 <div class="calendar-cell"
                      [class.today-col]="isToday(day)"
                      [class.drag-over]="isDragOver(weekCellKey(day, time))"
+                     [attr.data-time]="time"
+                     (dblclick)="openNewBookingWeek(day, time)"
                      (dragover)="onDragOver($event, weekCellKey(day, time))"
                      (dragleave)="onDragLeave(weekCellKey(day, time))"
                      (drop)="onDropWeek($event, day, time)">
@@ -102,7 +100,8 @@
                          draggable="true"
                          (dragstart)="onDragStart($event, booking)"
                          (dragend)="onDragEnd()"
-                         (click)="openPopup($event, booking)">
+                         (click)="openPopup($event, booking)"
+                         (dblclick)="$event.stopPropagation(); editBooking(booking)">
                       <span class="chip-name">{{ booking.customerName }}</span>
                       <span class="chip-svc">{{ booking.services[0].serviceName }}</span>
                     </div>
@@ -135,12 +134,14 @@
         </div>
         <div class="day-body" (scroll)="onCalendarScroll()">
           @for (time of timeSlots; track time) {
-            <div class="day-row" [style.grid-template-columns]="'64px repeat(' + therapists().length + ', 1fr)'">
+            <div class="day-row" [class.hour-row]="time.endsWith(':00')" [style.grid-template-columns]="'64px repeat(' + therapists().length + ', 1fr)'">
               <div class="time-label-day">{{ time }}</div>
               @for (therapist of therapists(); track therapist.id) {
                 <div class="day-cell"
                      [class.off-hours]="!isTherapistWorkingAt(therapist, time)"
                      [class.drag-over]="isDragOver(dayCellKey(therapist.id, time))"
+                     [attr.data-time]="time"
+                     (dblclick)="openNewBooking(therapist.id, time)"
                      (dragover)="onDragOver($event, dayCellKey(therapist.id, time))"
                      (dragleave)="onDragLeave(dayCellKey(therapist.id, time))"
                      (drop)="onDropDay($event, therapist.id, time)">
@@ -153,7 +154,8 @@
                            draggable="true"
                            (dragstart)="onDragStart($event, booking)"
                            (dragend)="onDragEnd()"
-                           (click)="openPopup($event, booking)">
+                           (click)="openPopup($event, booking)"
+                           (dblclick)="$event.stopPropagation(); editBooking(booking)">
                         <span class="block-time">{{ booking.startTime }} – {{ booking.endTime }}</span>
                         <span class="block-name">{{ booking.customerName }}</span>
                         <span class="block-svc">{{ booking.services[0].serviceName }}</span>
@@ -204,6 +206,16 @@
           <div class="popup-service">{{ svc.serviceName }} – {{ svc.duration }}' – ${{ svc.price }}</div>
         }
         <div class="popup-total">Total: <strong>${{ activePopup()!.booking.totalPrice }}</strong></div>
+        <div class="popup-actions">
+          <button class="popup-edit-btn" (click)="editBooking(activePopup()!.booking)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit Booking
+          </button>
+          <button class="popup-cart-btn" (click)="payNow(activePopup()!.booking); activePopup.set(null)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Open Cart
+          </button>
+        </div>
       </div>
     }
   </div>
@@ -243,6 +255,31 @@
       </table>
     </div>
   </div>
+
+  <!-- Payment Dialog -->
+  @if (showPaymentDialog()) {
+    <div class="modal-overlay" (click)="postponePayment(showPaymentDialog()!)">
+      <div class="payment-dialog" (click)="$event.stopPropagation()">
+        <div class="payment-dialog-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h3 class="payment-dialog-title">{{ showPaymentDialog()!.customerName }} has departed</h3>
+        <p class="payment-dialog-sub">
+          {{ showPaymentDialog()!.services.length }} service(s) · Total ${{ showPaymentDialog()!.totalPrice }}
+        </p>
+        <div class="payment-dialog-actions">
+          <button class="btn-secondary payment-postpone" (click)="postponePayment(showPaymentDialog()!)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Postpone Payment
+          </button>
+          <button class="btn-primary payment-now" (click)="payNow(showPaymentDialog()!)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Pay Now
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- New Booking Modal -->
   @if (showNewBookingModal()) {

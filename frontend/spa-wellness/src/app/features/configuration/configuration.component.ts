@@ -38,7 +38,26 @@ export interface MembershipPlanConfig {
   renewalCount: number; activeMembers: number; createdAt: string;
 }
 
-export type SubPage = 'areas' | 'area-groups' | 'packages' | 'service-groups' | 'services' | 'product-groups' | 'products' | 'suppliers' | 'pricings' | 'questionnaires' | 'memberships';
+export type SubPage = 'areas' | 'area-groups' | 'packages' | 'service-groups' | 'services' | 'product-groups' | 'products' | 'suppliers' | 'pricings' | 'questionnaires' | 'memberships' | 'employees' | 'customers';
+
+export type EmployeeRole = 'therapist' | 'receptionist' | 'manager' | 'cashier' | 'cleaner' | 'other';
+export interface Employee {
+  id: number; code: string; firstName: string; lastName: string; role: EmployeeRole;
+  email: string; phone: string; specialties: string[]; status: 'Active' | 'Inactive' | 'On Leave';
+  hireDate: string; birthDate: string; gender: 'Male' | 'Female' | 'Other';
+  address: string; emergencyContact: string; notes: string;
+}
+
+export type CustomerType = 'individual' | 'group';
+export type Salutation = 'Mr.' | 'Mrs.' | 'Ms.' | 'Dr.' | 'Prof.' | 'Other';
+export interface CustomerQuestionnaire { questionnaireId: number; questionnaireName: string; completedAt: string; }
+export interface Customer {
+  id: number; code: string; salutation: Salutation; firstName: string; lastName: string;
+  type: CustomerType; gender: 'Male' | 'Female' | 'Other'; nationality: string;
+  birthDate: string; email: string; contactEmail: string; phone: string; telephone: string;
+  address: string; membershipId?: number; tags: string[]; notes: string;
+  questionnaires: CustomerQuestionnaire[]; status: 'Active' | 'Inactive'; createdAt: string;
+}
 
 @Component({
   selector: 'app-configuration',
@@ -61,6 +80,8 @@ export class ConfigurationComponent implements OnInit {
     { page: 'suppliers', label: 'Suppliers', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
     { page: 'questionnaires', label: 'Questionnaires', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="1"/><circle cx="14" cy="13" r="1"/><path d="M10 17s1 1 4 0"/></svg>' },
     { page: 'memberships', label: 'Memberships', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><path d="M7 15h.01M11 15h2"/></svg>' },
+    { page: 'employees', label: 'Employees', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+    { page: 'customers', label: 'Customers', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
     { page: 'pricings', label: 'Pricings', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' },
   ];
 
@@ -190,7 +211,57 @@ export class ConfigurationComponent implements OnInit {
     return map[tier];
   }
 
-  constructor(private readonly router: Router, private readonly qService: QuestionnaireService, private readonly route: ActivatedRoute) {}
+
+  // ─── Employees ────────────────────────────────────────────────────────────
+  employees = signal<Employee[]>([
+    { id: 1, code: 'EMP001', firstName: 'Emma', lastName: 'Wilson', role: 'therapist', email: 'emma@serenity.com', phone: '+1-555-0201', specialties: ['Massage', 'Body Treatment'], status: 'Active', hireDate: '2022-03-15', birthDate: '1990-06-12', gender: 'Female', address: '12 Spa Lane, New York', emergencyContact: 'John Wilson +1-555-9901', notes: 'Senior therapist.' },
+    { id: 2, code: 'EMP002', firstName: 'Olivia', lastName: 'Martinez', role: 'therapist', email: 'olivia@serenity.com', phone: '+1-555-0202', specialties: ['Facial', 'Body Treatment'], status: 'Active', hireDate: '2022-06-01', birthDate: '1993-02-28', gender: 'Female', address: '45 Wellness Ave, New York', emergencyContact: 'Carlos Martinez +1-555-9902', notes: '' },
+    { id: 3, code: 'EMP003', firstName: 'Sophia', lastName: 'Kim', role: 'therapist', email: 'sophia@serenity.com', phone: '+1-555-0203', specialties: ['Massage', 'Wellness'], status: 'On Leave', hireDate: '2021-11-10', birthDate: '1988-09-05', gender: 'Female', address: '78 Calm Street, New York', emergencyContact: 'Min Kim +1-555-9903', notes: 'On leave.' },
+    { id: 4, code: 'EMP004', firstName: 'Isabella', lastName: 'Davis', role: 'therapist', email: 'isabella@serenity.com', phone: '+1-555-0204', specialties: ['Nail', 'Hair'], status: 'Active', hireDate: '2023-01-20', birthDate: '1995-11-17', gender: 'Female', address: '33 Beauty Blvd, New York', emergencyContact: 'Tom Davis +1-555-9904', notes: '' },
+    { id: 5, code: 'EMP005', firstName: 'Mia', lastName: 'Johnson', role: 'therapist', email: 'mia@serenity.com', phone: '+1-555-0205', specialties: ['Massage', 'Facial', 'Wellness'], status: 'Active', hireDate: '2023-05-08', birthDate: '1997-04-22', gender: 'Female', address: '90 Relax Road, New York', emergencyContact: 'Sara Johnson +1-555-9905', notes: '' },
+    { id: 6, code: 'EMP006', firstName: 'James', lastName: 'Carter', role: 'receptionist', email: 'james@serenity.com', phone: '+1-555-0206', specialties: [], status: 'Active', hireDate: '2022-09-01', birthDate: '1991-07-30', gender: 'Male', address: '5 Front Desk Way, New York', emergencyContact: 'Linda Carter +1-555-9906', notes: '' },
+    { id: 7, code: 'EMP007', firstName: 'Sarah', lastName: 'Lee', role: 'manager', email: 'sarah.lee@serenity.com', phone: '+1-555-0207', specialties: [], status: 'Active', hireDate: '2020-01-15', birthDate: '1985-03-14', gender: 'Female', address: '1 Management Ave, New York', emergencyContact: 'David Lee +1-555-9907', notes: 'Spa Manager.' },
+  ]);
+
+  employeeForm = signal<Partial<Employee>>({});
+  readonly employeeRoles: EmployeeRole[] = ['therapist', 'receptionist', 'manager', 'cashier', 'cleaner', 'other'];
+  readonly employeeStatuses = ['Active', 'Inactive', 'On Leave'];
+  readonly specialtyOptions = ['Massage', 'Facial', 'Body Treatment', 'Nail', 'Hair', 'Wellness', 'Hydrotherapy', 'Aromatherapy'];
+
+  filteredEmployees = computed(() => { const q = this.searchTerm().toLowerCase(); return this.employees().filter(e => !q || e.firstName.toLowerCase().includes(q) || e.lastName.toLowerCase().includes(q) || e.role.includes(q) || e.email.toLowerCase().includes(q)); });
+  paginatedEmployees = computed(() => this.paginate(this.filteredEmployees()));
+
+  // ─── Customers ────────────────────────────────────────────────────────────
+  customers = signal<Customer[]>([
+    { id: 1, code: 'CLT001', salutation: 'Mrs.', firstName: 'Alice', lastName: 'Thompson', type: 'individual', gender: 'Female', nationality: 'American', birthDate: '1985-04-12', email: 'alice@email.com', contactEmail: 'alice.work@email.com', phone: '+1-555-0301', telephone: '+1-555-0311', address: '12 Oak Street, New York', membershipId: 1, tags: ['VIP', 'Regular'], notes: 'Prefers Emma Wilson.', questionnaires: [{ questionnaireId: 1, questionnaireName: 'New Client Health Questionnaire', completedAt: '2024-01-15' }], status: 'Active', createdAt: '2023-01-10' },
+    { id: 2, code: 'CLT002', salutation: 'Ms.', firstName: 'Jessica', lastName: 'Rivera', type: 'individual', gender: 'Female', nationality: 'American', birthDate: '1992-08-25', email: 'jessica@email.com', contactEmail: '', phone: '+1-555-0302', telephone: '', address: '45 Maple Ave, Los Angeles', tags: ['Regular'], notes: '', questionnaires: [{ questionnaireId: 2, questionnaireName: 'Facial Treatment Consultation', completedAt: '2024-02-10' }], status: 'Active', createdAt: '2023-06-15' },
+    { id: 3, code: 'CLT003', salutation: 'Mr.', firstName: 'Michael', lastName: 'Chen', type: 'individual', gender: 'Male', nationality: 'Chinese', birthDate: '1988-11-03', email: 'michael@email.com', contactEmail: '', phone: '+1-555-0303', telephone: '+1-555-0313', address: '78 Pine Road, San Francisco', tags: ['New'], notes: 'First visit March 2024.', questionnaires: [], status: 'Active', createdAt: '2024-03-22' },
+    { id: 4, code: 'CLT004', salutation: 'Mrs.', firstName: 'Sarah', lastName: 'Williams', type: 'individual', gender: 'Female', nationality: 'British', birthDate: '1979-06-18', email: 'sarah@email.com', contactEmail: 'sarah.biz@email.com', phone: '+1-555-0304', telephone: '+1-555-0314', address: '99 Elm Street, Miami', membershipId: 2, tags: ['Premium'], notes: 'Prefers Mia Johnson.', questionnaires: [{ questionnaireId: 1, questionnaireName: 'New Client Health Questionnaire', completedAt: '2023-09-01' }], status: 'Active', createdAt: '2022-09-01' },
+    { id: 5, code: 'CLT005', salutation: 'Mr.', firstName: 'David', lastName: 'Park', type: 'individual', gender: 'Male', nationality: 'Korean', birthDate: '1990-02-14', email: 'david@email.com', contactEmail: '', phone: '+1-555-0305', telephone: '', address: '22 Cedar Lane, Chicago', tags: [], notes: '', questionnaires: [], status: 'Active', createdAt: '2023-11-20' },
+    { id: 6, code: 'CLT006', salutation: 'Mrs.', firstName: 'Karen', lastName: 'Brown', type: 'individual', gender: 'Female', nationality: 'Canadian', birthDate: '1975-09-30', email: 'karen@email.com', contactEmail: 'karen.corp@email.com', phone: '+1-555-0306', telephone: '+1-555-0316', address: '55 Birch Blvd, Seattle', membershipId: 3, tags: ['VIP'], notes: 'VIP client.', questionnaires: [{ questionnaireId: 1, questionnaireName: 'New Client Health Questionnaire', completedAt: '2022-03-15' }], status: 'Active', createdAt: '2022-03-15' },
+  ]);
+
+  customerForm = signal<Partial<Customer>>({});
+  readonly salutationOptions: Salutation[] = ['Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.', 'Other'];
+  readonly nationalityOptions = ['American', 'British', 'Canadian', 'Australian', 'French', 'German', 'Italian', 'Spanish', 'Chinese', 'Japanese', 'Korean', 'Indian', 'Brazilian', 'Mexican', 'Other'];
+
+  filteredCustomers = computed(() => { const q = this.searchTerm().toLowerCase(); return this.customers().filter(c => !q || c.firstName.toLowerCase().includes(q) || c.lastName.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)); });
+  paginatedCustomers = computed(() => this.paginate(this.filteredCustomers()));
+
+  getCustomerFullName(c: Customer): string { return `${c.salutation} ${c.firstName} ${c.lastName}`; }
+  getMembershipName(id?: number): string { return id ? (this.membershipPlans().find(m => m.id === id)?.name ?? '—') : '—'; }
+
+  toggleCustomerQuestionnaire(qId: number, qName: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const current = this.customerForm().questionnaires ?? [];
+    if (checked) {
+      this.customerForm.update(f => ({ ...f, questionnaires: [...current, { questionnaireId: qId, questionnaireName: qName, completedAt: '' }] }));
+    } else {
+      this.customerForm.update(f => ({ ...f, questionnaires: current.filter(x => x.questionnaireId !== qId) }));
+    }
+  }
+
+  constructor(private readonly router: Router, public readonly qService: QuestionnaireService, private readonly route: ActivatedRoute) {}
 
   ngOnInit(): void {
     const page = this.route.snapshot.queryParamMap.get('page') as SubPage | null;
@@ -251,6 +322,8 @@ export class ConfigurationComponent implements OnInit {
       case 'pricings': return this.filteredPricings().length;
       case 'questionnaires': return this.filteredQuestionnaires().length;
       case 'memberships': return this.filteredMemberships().length;
+      case 'employees': return this.filteredEmployees().length;
+      case 'customers': return this.filteredCustomers().length;
     }
   });
 
@@ -304,7 +377,7 @@ export class ConfigurationComponent implements OnInit {
   setPageSize(size: number): void { this.pageSize.set(size); this.currentPage.set(1); }
 
   get pageTitle(): string {
-    const map: Record<SubPage, string> = { 'areas': 'Areas', 'area-groups': 'Area Groups', 'packages': 'Packages', 'service-groups': 'Service Groups', 'services': 'Services', 'product-groups': 'Product Groups', 'products': 'Products', 'suppliers': 'Suppliers', 'pricings': 'Pricings', 'questionnaires': 'Questionnaires', 'memberships': 'Membership Plans' };
+    const map: Record<SubPage, string> = { 'areas': 'Areas', 'area-groups': 'Area Groups', 'packages': 'Packages', 'service-groups': 'Service Groups', 'services': 'Services', 'product-groups': 'Product Groups', 'products': 'Products', 'suppliers': 'Suppliers', 'pricings': 'Pricings', 'questionnaires': 'Questionnaires', 'memberships': 'Membership Plans', 'employees': 'Employees', 'customers': 'Customers' };
     return map[this.activePage()];
   }
 
@@ -318,7 +391,7 @@ export class ConfigurationComponent implements OnInit {
   // ─── CRUD ─────────────────────────────────────────────────────────────────
   openAdd(): void { this.modalMode.set('add'); this.editingId.set(null); this.resetForms(); this.showModal.set(true); }
 
-  openEdit(item: Area | AreaGroup | Package | ServiceGroup | Service | ProductGroup | Product | Supplier | Pricing | MembershipPlanConfig): void {
+  openEdit(item: Area | AreaGroup | Package | ServiceGroup | Service | ProductGroup | Product | Supplier | Pricing | MembershipPlanConfig | Employee | Customer): void {
     this.modalMode.set('edit'); this.editingId.set(item.id);
     const p = this.activePage();
     if (p === 'areas') this.areaForm.set({ ...(item as Area) });
@@ -334,6 +407,8 @@ export class ConfigurationComponent implements OnInit {
     else if (p === 'suppliers') this.supplierForm.set({ ...(item as Supplier) });
     else if (p === 'pricings') this.pricingForm.set({ ...(item as Pricing) });
     else if (p === 'memberships') { this.membershipForm.set({ ...(item as unknown as MembershipPlanConfig) }); this.newBenefit.set(''); }
+    else if (p === 'employees') this.employeeForm.set({ ...(item as unknown as Employee) });
+    else if (p === 'customers') this.customerForm.set({ ...(item as unknown as Customer) });
     this.showModal.set(true);
   }
 
@@ -391,6 +466,16 @@ export class ConfigurationComponent implements OnInit {
       const newId = Math.max(0, ...this.membershipPlans().map(x => x.id)) + 1;
       if (mode === 'add') this.membershipPlans.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('MBR', newId), name: f.name!, tier: f.tier ?? 'basic', price: f.price ?? 0, billingCycle: f.billingCycle ?? 'monthly', duration: f.duration ?? 1, durationUnit: f.durationUnit ?? 'months', discountPercentage: f.discountPercentage ?? 0, freeServicesPerMonth: f.freeServicesPerMonth ?? 0, priorityBooking: f.priorityBooking ?? false, onlineSignup: f.onlineSignup ?? true, accessCardEnabled: f.accessCardEnabled ?? false, accessCardType: f.accessCardType ?? 'RFID', autoRenew: f.autoRenew ?? true, trialDays: f.trialDays ?? 0, maxMembers: f.maxMembers ?? 0, benefits: f.benefits ?? [], status: f.status ?? 'Active', renewalCount: 0, activeMembers: 0, createdAt: new Date().toISOString().split('T')[0] }]);
       else this.membershipPlans.update(l => l.map(x => x.id === this.editingId() ? { ...x, ...f } as MembershipPlanConfig : x));
+    } else if (p === 'employees') {
+      const f = this.employeeForm(); if (!f.firstName || !f.lastName) return;
+      const newId = Math.max(0, ...this.employees().map(e => e.id)) + 1;
+      if (mode === 'add') this.employees.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('EMP', newId), firstName: f.firstName!, lastName: f.lastName!, role: f.role ?? 'therapist', email: f.email ?? '', phone: f.phone ?? '', specialties: f.specialties ?? [], status: f.status ?? 'Active', hireDate: f.hireDate ?? new Date().toISOString().split('T')[0], birthDate: f.birthDate ?? '', gender: f.gender ?? 'Female', address: f.address ?? '', emergencyContact: f.emergencyContact ?? '', notes: f.notes ?? '' }]);
+      else this.employees.update(l => l.map(e => e.id === this.editingId() ? { ...e, ...f } as Employee : e));
+    } else if (p === 'customers') {
+      const f = this.customerForm(); if (!f.firstName || !f.lastName) return;
+      const newId = Math.max(0, ...this.customers().map(c => c.id)) + 1;
+      if (mode === 'add') this.customers.update(l => [...l, { id: newId, code: f.code ?? this.autoCode('CLT', newId), salutation: f.salutation ?? 'Mr.', firstName: f.firstName!, lastName: f.lastName!, type: f.type ?? 'individual', gender: f.gender ?? 'Male', nationality: f.nationality ?? '', birthDate: f.birthDate ?? '', email: f.email ?? '', contactEmail: f.contactEmail ?? '', phone: f.phone ?? '', telephone: f.telephone ?? '', address: f.address ?? '', membershipId: f.membershipId, tags: f.tags ?? [], notes: f.notes ?? '', questionnaires: [], status: f.status ?? 'Active', createdAt: new Date().toISOString().split('T')[0] }]);
+      else this.customers.update(l => l.map(c => c.id === this.editingId() ? { ...c, ...f } as Customer : c));
     }
     this.showModal.set(false);
   }
@@ -409,6 +494,8 @@ export class ConfigurationComponent implements OnInit {
     else if (p === 'pricings') this.pricings.update(l => l.filter(x => x.id !== id));
     else if (p === 'questionnaires') this.qService.questionnaires.update(l => l.filter(x => x.id !== id));
     else if (p === 'memberships') this.membershipPlans.update(l => l.filter(x => x.id !== id));
+    else if (p === 'employees') this.employees.update(l => l.filter(e => e.id !== id));
+    else if (p === 'customers') this.customers.update(l => l.filter(c => c.id !== id));
   }
 
   toggleActive(id: number): void {
@@ -421,6 +508,8 @@ export class ConfigurationComponent implements OnInit {
     else if (p === 'products') this.products.update(l => l.map(x => x.id === id ? { ...x, active: !x.active } : x));
     else if (p === 'suppliers') this.suppliers.update(l => l.map(s => s.id === id ? { ...s, active: !s.active } : s));
     else if (p === 'memberships') this.membershipPlans.update(l => l.map(m => m.id === id ? { ...m, status: m.status === 'Active' ? 'Inactive' : 'Active' } as MembershipPlanConfig : m));
+    else if (p === 'employees') this.employees.update(l => l.map(e => e.id === id ? { ...e, status: e.status === 'Active' ? 'Inactive' : 'Active' } as Employee : e));
+    else if (p === 'customers') this.customers.update(l => l.map(c => c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } as Customer : c));
     else if (p === 'pricings') this.pricings.update(l => l.map(x => x.id === id ? { ...x, active: !x.active } : x));
   }
 
@@ -436,6 +525,8 @@ export class ConfigurationComponent implements OnInit {
     this.pricingForm.set({ active: true, availableOnline: false, category: 'Normal' });
     this.membershipForm.set({ status: 'Active', tier: 'basic', billingCycle: 'monthly', price: 0, duration: 1, durationUnit: 'months', discountPercentage: 0, freeServicesPerMonth: 0, priorityBooking: false, onlineSignup: true, accessCardEnabled: false, accessCardType: 'RFID', autoRenew: true, trialDays: 0, maxMembers: 0, benefits: [] });
     this.newBenefit.set('');
+    this.employeeForm.set({ status: 'Active', role: 'therapist', gender: 'Female', specialties: [] });
+    this.customerForm.set({ status: 'Active', type: 'individual', gender: 'Male', salutation: 'Mr.', tags: [], questionnaires: [] });
   }
 
   private autoCode(prefix: string, id: number): string { return `${prefix}${String(id).padStart(3, '0')}`; }
